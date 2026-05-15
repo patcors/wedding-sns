@@ -85,29 +85,39 @@ export class OverworldScene extends Phaser.Scene {
   update() {
     if (this.moving) return;
 
+    // Hold-to-walk: isDown re-fires every frame while the key is held, so when
+    // the previous step's tween completes (moving=false), the next update tick
+    // immediately starts another step. Smooth tile-by-tile chain.
     let dir: Dir | null = null;
-    if (
-      Phaser.Input.Keyboard.JustDown(this.cursors.up!) ||
-      Phaser.Input.Keyboard.JustDown(this.wasd.up) ||
-      this.pressed.up
-    ) dir = "up";
-    else if (
-      Phaser.Input.Keyboard.JustDown(this.cursors.down!) ||
-      Phaser.Input.Keyboard.JustDown(this.wasd.down) ||
+    if (this.cursors.up?.isDown || this.wasd.up.isDown || this.pressed.up) {
+      dir = "up";
+    } else if (
+      this.cursors.down?.isDown ||
+      this.wasd.down.isDown ||
       this.pressed.down
-    ) dir = "down";
-    else if (
-      Phaser.Input.Keyboard.JustDown(this.cursors.left!) ||
-      Phaser.Input.Keyboard.JustDown(this.wasd.left) ||
+    ) {
+      dir = "down";
+    } else if (
+      this.cursors.left?.isDown ||
+      this.wasd.left.isDown ||
       this.pressed.left
-    ) dir = "left";
-    else if (
-      Phaser.Input.Keyboard.JustDown(this.cursors.right!) ||
-      Phaser.Input.Keyboard.JustDown(this.wasd.right) ||
+    ) {
+      dir = "left";
+    } else if (
+      this.cursors.right?.isDown ||
+      this.wasd.right.isDown ||
       this.pressed.right
-    ) dir = "right";
+    ) {
+      dir = "right";
+    }
 
-    if (dir) this.step(dir);
+    if (dir) {
+      this.step(dir);
+    } else if (this.player.anims.isPlaying) {
+      // No direction held and the step just finished — settle into idle.
+      this.player.anims.stop();
+      this.player.setFrame(idleFrameFor(this.facing));
+    }
   }
 
   // --- input ---
@@ -198,9 +208,10 @@ export class OverworldScene extends Phaser.Scene {
       y: targetY + 6,
       duration: STEP_MS,
       onComplete: () => {
+        // Leave the walk anim running — update() decides whether to stop it
+        // based on whether a direction is still held. That keeps the cycle
+        // smooth across consecutive same-direction steps.
         this.moving = false;
-        this.player.anims.stop();
-        this.player.setFrame(idleFrameFor(this.facing));
       },
     });
   }
