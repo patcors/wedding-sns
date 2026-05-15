@@ -105,18 +105,10 @@ export class CharacterSelectScene extends Phaser.Scene {
   private confirm() {
     const chosen = this.slots[this.cursor].id;
     this.registry.set("character", chosen);
-    // TODO: this.scene.start("Overworld") once that scene exists.
     this.cameras.main.flash(200, 255, 255, 255);
     this.cameras.main.fade(400, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
-      this.add
-        .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, `you chose ${CHARACTERS[chosen].name}`, {
-          fontFamily: "monospace",
-          fontSize: "10px",
-          color: "#ffffff",
-        })
-        .setOrigin(0.5);
-      this.cameras.main.fadeIn(400, 0, 0, 0);
+      this.scene.start("Overworld");
     });
   }
 }
