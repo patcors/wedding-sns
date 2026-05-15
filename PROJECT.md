@@ -36,14 +36,16 @@ game/
   systems/                (later) battle.ts pure functions, save.ts localStorage
   net/                    (later) /api wrappers for messages + runs
 public/
-  sprites/                drop sprite atlases here
+  <source>/               sprite assets grouped by where they came from
+                          (e.g. public/pokemon-phaser/player.png) — keeps IP
+                          provenance obvious and makes per-source removal easy
 ```
 
 ## Conventions
 - All NPCs / dialogue / encounters live as **data**, not code. Adding a guest cameo should be a one-line edit in `game/data/trainers.ts` + a sprite.
 - Phaser is **never** imported at module top-level in a server component — always dynamic + `ssr: false`, or behind `"use client"`.
 - Forms (end-of-run message, etc.) are rendered in React on top of the canvas, not in Phaser — saves rebuilding text inputs and gets mobile keyboard for free.
-- Internal game resolution is fixed (GBA-ish 240×160) and `Phaser.Scale.FIT` upscales. Use `pixelArt: true`, `roundPixels: true`.
+- Internal game resolution is fixed (320×240, a touch above GBA-native 240×160 to give 32×48 player sprites breathing room) and `Phaser.Scale.FIT` upscales. Use `pixelArt: true`, `roundPixels: true`.
 
 ## Status / next steps
 - [x] Step 1 — Next.js + Tailwind base (came from create-next-app).

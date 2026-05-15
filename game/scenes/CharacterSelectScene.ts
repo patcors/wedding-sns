@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { CHARACTERS, CharacterId, GAME_HEIGHT, GAME_WIDTH } from "../constants";
+import { ASSETS, CHARACTERS, CharacterId, GAME_HEIGHT, GAME_WIDTH } from "../constants";
 
 type Slot = {
   id: CharacterId;
@@ -65,22 +65,23 @@ export class CharacterSelectScene extends Phaser.Scene {
     const container = this.add.container(x, y);
 
     const frame = this.add
-      .rectangle(0, 0, 44, 60, 0x1c1c24)
+      .rectangle(0, 0, 48, 72, 0x1c1c24)
       .setStrokeStyle(1, 0x2e2e3a);
 
-    // Placeholder body until real sprites land in public/sprites/.
-    const body = this.add.rectangle(0, 4, 22, 30, char.accent);
-    const head = this.add.rectangle(0, -16, 18, 18, 0xf5d0b0);
+    // Real Brendan sprite, frame 0 = facing-down idle.
+    // TODO: distinct May/Leaf sheet for Sarah — tinted for now.
+    const sprite = this.add.sprite(0, -2, ASSETS.PLAYER_SHEET, 0).setOrigin(0.5, 0.5);
+    if (id === "sarah") sprite.setTint(CHARACTERS.sarah.accent);
 
     const label = this.add
-      .text(0, 22, char.name.toUpperCase(), {
+      .text(0, 28, char.name.toUpperCase(), {
         fontFamily: "monospace",
         fontSize: "9px",
         color: "#ffffff",
       })
       .setOrigin(0.5);
 
-    container.add([frame, body, head, label]);
+    container.add([frame, sprite, label]);
     return { id, container, frame };
   }
 
