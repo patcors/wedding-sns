@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import NintendoDS from "@/components/NintendoDS";
+import NintendoDS3 from "@/components/NintendoDS3";
 
 const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
   ssr: false,
@@ -13,5 +13,5 @@ const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
 });
 
 export default function PlayPage() {
-  return <NintendoDS topScreen={<GameCanvas />} />;
+  return <NintendoDS3 topScreen={<GameCanvas />} />;
 }
