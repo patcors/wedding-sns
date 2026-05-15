@@ -1,16 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import NintendoDS from "@/components/NintendoDS";
 
 const GameCanvas = dynamic(() => import("@/components/GameCanvas"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[100dvh] w-full items-center justify-center bg-black text-sm text-zinc-400">
-      Loading the world…
+    <div className="flex h-full w-full items-center justify-center bg-black text-[10px] text-zinc-500">
+      booting…
     </div>
   ),
 });
 
 export default function PlayPage() {
-  return <GameCanvas />;
+  return <NintendoDS topScreen={<GameCanvas />} />;
 }

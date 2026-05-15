@@ -27,7 +27,7 @@ export default function GameCanvas() {
   return (
     <div
       ref={hostRef}
-      className="h-[100dvh] w-full touch-none select-none bg-black"
+      className="h-full w-full touch-none select-none bg-black"
     />
   );
 }

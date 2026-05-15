@@ -7,19 +7,11 @@ import {
   TILE_SIZE,
   TileMap,
 } from "../data/maps/garden";
+import { inputBus } from "../input/bus";
 
 type Dir = "up" | "down" | "left" | "right";
 
 const STEP_MS = 200; // matches the 8fps walk anim — one full cycle per tile
-
-// Mobile controls (or any external UI) fire these events on the scene.
-// Pattern from ../pokemon-phaser — a React-rendered d-pad can emit these.
-export const INPUT_EVENT: Record<Dir, string> = {
-  up: "Up",
-  down: "Down",
-  left: "Left",
-  right: "Right",
-};
 
 export class OverworldScene extends Phaser.Scene {
   private map!: TileMap;
@@ -136,13 +128,16 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   private bindExternalInput() {
-    (Object.entries(INPUT_EVENT) as [Dir, string][]).forEach(([dir, evt]) => {
-      this.events.on(evt, () => {
-        this.pressed[dir] = true;
-      });
-      this.events.on(`${evt}Up`, () => {
-        this.pressed[dir] = false;
-      });
+    // React-rendered D-pad on the DS shell talks to us via the input bus.
+    const offPress = inputBus.onPress((dir) => {
+      this.pressed[dir] = true;
+    });
+    const offRelease = inputBus.onRelease((dir) => {
+      this.pressed[dir] = false;
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      offPress();
+      offRelease();
     });
   }
 
