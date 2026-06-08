@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Tiled editor backups & autosaves
+*.tmj.autosave
+*.tmx.autosave
+*.tsj.autosave
+
+# Tiled per-user session state (workspace, open tabs, recent files) — keep .tiled-project committed
+*.tiled-session

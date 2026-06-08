@@ -14,7 +14,19 @@
       "Bash(cp /Users/patrickcorbett/Documents/nintendo/ds-lite-open.png /Users/patrickcorbett/projects/wedding-sns/public/ds/ds-lite-open.png)",
       "Bash(cp /Users/patrickcorbett/Documents/nintendo/ds_lite_closed.png /Users/patrickcorbett/projects/wedding-sns/public/ds/ds-lite-closed.png)",
       "Bash(cp /Users/patrickcorbett/Documents/nintendo/ds-open-transparent.png /Users/patrickcorbett/projects/wedding-sns/public/ds/ds-open-transparent.png)",
-      "Bash(cp /Users/patrickcorbett/Documents/nintendo/ds-closed-transparent.png /Users/patrickcorbett/projects/wedding-sns/public/ds/ds-closed-transparent.png)"
+      "Bash(cp /Users/patrickcorbett/Documents/nintendo/ds-closed-transparent.png /Users/patrickcorbett/projects/wedding-sns/public/ds/ds-closed-transparent.png)",
+      "Bash(sips -g pixelWidth -g pixelHeight \"sprites/Game Boy Advance - Pokemon FireRed _ LeafGreen - Tilesets - Tileset.png\" \"sprites/Game Boy Advance - Pokemon FireRed _ LeafGreen - Tilesets - Tileset 1.png\" \"sprites/Game Boy Advance - Pokemon FireRed _ LeafGreen - Tilesets - Tileset 2.png\" \"sprites/Game Boy Advance - Pokemon FireRed _ LeafGreen - Maps \\(Towns, Buildings, Etc.\\) - Pallet Town.png\")",
+      "Bash(cp \"/Users/patrickcorbett/projects/wedding-sns/sprites/Game Boy Advance - Pokemon FireRed _ LeafGreen - Tilesets - Tileset 2.png\" /Users/patrickcorbett/projects/wedding-sns/public/frlg/tileset-outdoor.png)",
+      "Bash(cp \"/Users/patrickcorbett/projects/wedding-sns/sprites/Game Boy Advance - Pokemon FireRed _ LeafGreen - Tilesets - Tileset 1.png\" /Users/patrickcorbett/projects/wedding-sns/public/frlg/tileset-buildings.png)",
+      "Bash(command -v magick)",
+      "Bash(command -v convert)",
+      "Bash(command -v ffmpeg)",
+      "Bash(sips -g pixelWidth -g pixelHeight /Users/patrickcorbett/projects/wedding-sns/public/frlg/tileset-outdoor.png /Users/patrickcorbett/projects/wedding-sns/public/frlg/tileset-buildings.png)",
+      "Bash(python3 *)",
+      "Bash(node *)",
+      "Bash(node -p \"require\\('./node_modules/phaser/package.json'\\).version\")",
+      "Bash(grep -rn \"garden\\\\|gardenMap\\\\|TILE_SIZE\\\\|SOLID_TILES\\\\|GRASS_CLUMP\" game/ app/ components/)",
+      "Bash(grep -rl \"createLayer\" node_modules/phaser/dist/phaser.js)"
     ]
   }
 }

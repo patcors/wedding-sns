@@ -1,12 +1,7 @@
 import Phaser from "phaser";
 import { ASSETS, CHARACTERS, CharacterId, PLAYER_ANIM } from "../constants";
-import {
-  gardenMap,
-  SOLID_TILES,
-  TILE,
-  TILE_SIZE,
-  TileMap,
-} from "../data/maps/garden";
+import { OVERWORLD } from "../data/maps/overworld";
+import { buildTilemap } from "../systems/tilemap";
 import { inputBus } from "../input/bus";
 
 type Dir = "up" | "down" | "left" | "right";
@@ -14,7 +9,11 @@ type Dir = "up" | "down" | "left" | "right";
 const STEP_MS = 200; // matches the 8fps walk anim — one full cycle per tile
 
 export class OverworldScene extends Phaser.Scene {
-  private map!: TileMap;
+  private tilemap!: Phaser.Tilemaps.Tilemap;
+  private layers: Phaser.Tilemaps.TilemapLayer[] = [];
+  private tileW = 16;
+  private tileH = 16;
+
   private player!: Phaser.GameObjects.Sprite;
   private playerShadow!: Phaser.GameObjects.Ellipse;
   private tileX = 0;
@@ -36,23 +35,25 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   create() {
-    this.map = gardenMap;
-    this.ensureTileTextures();
-    this.drawMap();
+    this.buildWorld();
 
     const character =
       (this.registry.get("character") as CharacterId | undefined) ?? "sam";
 
-    this.tileX = this.map.spawn.x;
-    this.tileY = this.map.spawn.y;
+    const spawn = this.findSpawn();
+    this.tileX = spawn.x;
+    this.tileY = spawn.y;
     this.buildPlayer(character);
     this.placePlayer();
 
     // Camera follows the player around the larger world. No arcade physics —
-    // movement is pure tweens, collision is the SOLID_TILES check in canEnter.
-    const worldW = this.map.width * TILE_SIZE;
-    const worldH = this.map.height * TILE_SIZE;
-    this.cameras.main.setBounds(0, 0, worldW, worldH);
+    // movement is pure tweens, collision is the tile `collides` check in canEnter.
+    this.cameras.main.setBounds(
+      0,
+      0,
+      this.tilemap.widthInPixels,
+      this.tilemap.heightInPixels,
+    );
     this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
     this.cameras.main.setRoundPixels(true);
 
@@ -112,6 +113,49 @@ export class OverworldScene extends Phaser.Scene {
     }
   }
 
+  // --- world ---
+
+  private buildWorld() {
+    this.tilemap = buildTilemap(this, OVERWORLD);
+    this.tileW = this.tilemap.tileWidth;
+    this.tileH = this.tilemap.tileHeight;
+
+    // Render every tile layer in authoring order; mark collidable tiles via the
+    // `collides` custom property set on tiles in the tileset (Tiled). Tagging is
+    // done in Tiled — until tiles carry `collides=true`, only the map edge blocks.
+    this.layers = [];
+    this.tilemap.layers.forEach((layerData, i) => {
+      const layer = this.tilemap.createLayer(
+        layerData.name,
+        this.tilemap.tilesets,
+        0,
+        0,
+      );
+      if (!layer) return;
+      layer.setDepth(i);
+      layer.setCollisionByProperty({ collides: true });
+      this.layers.push(layer);
+    });
+  }
+
+  // Spawn from an object-layer Point named "spawn"; fall back to map center so
+  // the scene never breaks while the map is still being authored.
+  private findSpawn(): { x: number; y: number } {
+    for (const objectLayer of this.tilemap.objects) {
+      const spawn = objectLayer.objects.find((o) => o.name === "spawn");
+      if (spawn && spawn.x != null && spawn.y != null) {
+        return {
+          x: Math.floor(spawn.x / this.tileW),
+          y: Math.floor(spawn.y / this.tileH),
+        };
+      }
+    }
+    return {
+      x: Math.floor(this.tilemap.width / 2),
+      y: Math.floor(this.tilemap.height / 2),
+    };
+  }
+
   // --- input ---
 
   private bindKeys() {
@@ -144,8 +188,8 @@ export class OverworldScene extends Phaser.Scene {
   private bindTap() {
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
       const world = this.cameras.main.getWorldPoint(p.x, p.y);
-      const px = this.tileX * TILE_SIZE + TILE_SIZE / 2;
-      const py = this.tileY * TILE_SIZE + TILE_SIZE / 2;
+      const px = this.tileX * this.tileW + this.tileW / 2;
+      const py = this.tileY * this.tileH + this.tileH / 2;
       const dx = world.x - px;
       const dy = world.y - py;
       if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
@@ -184,8 +228,8 @@ export class OverworldScene extends Phaser.Scene {
 
     this.player.anims.play(walkAnimFor(dir), true);
 
-    const targetX = nx * TILE_SIZE + TILE_SIZE / 2;
-    const targetY = ny * TILE_SIZE + TILE_SIZE / 2;
+    const targetX = nx * this.tileW + this.tileW / 2;
+    const targetY = ny * this.tileH + this.tileH / 2;
 
     this.tweens.add({
       targets: [this.player, this.playerShadow],
@@ -217,8 +261,8 @@ export class OverworldScene extends Phaser.Scene {
     this.facing = dir;
     this.player.setFrame(idleFrameFor(dir));
     const [dx, dy] = dirToDelta(dir);
-    const baseX = this.tileX * TILE_SIZE + TILE_SIZE / 2;
-    const baseY = this.tileY * TILE_SIZE + TILE_SIZE / 2;
+    const baseX = this.tileX * this.tileW + this.tileW / 2;
+    const baseY = this.tileY * this.tileH + this.tileH / 2;
     const feetY = baseY + this.playerYOffset();
     this.tweens.add({
       targets: this.player,
@@ -242,39 +286,22 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   private canEnter(x: number, y: number) {
-    if (x < 0 || y < 0 || x >= this.map.width || y >= this.map.height) {
+    if (x < 0 || y < 0 || x >= this.tilemap.width || y >= this.tilemap.height) {
       return false;
     }
-    return !SOLID_TILES.has(this.map.tiles[y][x]);
-  }
-
-  // --- rendering ---
-
-  private drawMap() {
-    for (let y = 0; y < this.map.height; y++) {
-      for (let x = 0; x < this.map.width; x++) {
-        const tile = this.map.tiles[y][x];
-        // Vary grass tiles so the world doesn't read as a uniform graph-paper grid.
-        const key =
-          tile === TILE.GRASS
-            ? grassVariantKey((x * 31 + y * 17) % 3)
-            : tileKey(tile);
-        this.add.image(x * TILE_SIZE, y * TILE_SIZE, key).setOrigin(0, 0);
-
-        // Tall grass = FRLG grass clump on top of a grass base.
-        if (tile === TILE.TALL_GRASS) {
-          this.add
-            .image(x * TILE_SIZE, y * TILE_SIZE, ASSETS.GRASS_CLUMP)
-            .setOrigin(0, 0)
-            .setDepth(5);
-        }
-      }
+    // Blocked if any layer has a `collides`-tagged tile at this cell.
+    for (const layer of this.layers) {
+      const tile = layer.getTileAt(x, y);
+      if (tile && tile.collides) return false;
     }
+    return true;
   }
+
+  // --- player ---
 
   private placePlayer() {
-    const cx = this.tileX * TILE_SIZE + TILE_SIZE / 2;
-    const cy = this.tileY * TILE_SIZE + TILE_SIZE / 2;
+    const cx = this.tileX * this.tileW + this.tileW / 2;
+    const cy = this.tileY * this.tileH + this.tileH / 2;
     this.player.setPosition(cx, cy + this.playerYOffset());
     this.playerShadow.setPosition(cx, cy + 6);
   }
@@ -293,96 +320,7 @@ export class OverworldScene extends Phaser.Scene {
   // Player sprite is 48px tall and anchored at feet. Feet should sit slightly
   // below the tile center so it visually stands on the tile.
   private playerYOffset() {
-    return TILE_SIZE / 2 + 2;
-  }
-
-  // --- generated tile textures (placeholders until a real tileset lands) ---
-
-  private ensureTileTextures() {
-    const t = TILE_SIZE;
-    const g = this.make.graphics({ x: 0, y: 0 }, false);
-
-    const make = (key: string, draw: (g: Phaser.GameObjects.Graphics) => void) => {
-      if (this.textures.exists(key)) return;
-      g.clear();
-      draw(g);
-      g.generateTexture(key, t, t);
-    };
-
-    // Three grass variants — picked deterministically per (x,y) so it looks
-    // organic but doesn't shimmer.
-    const baseGrass = (g: Phaser.GameObjects.Graphics) => {
-      g.fillStyle(0x5ea744).fillRect(0, 0, t, t);
-      g.fillStyle(0x6fbd55, 0.9).fillRect(0, 0, t, 6);
-      g.fillStyle(0x4d8a37, 0.5).fillRect(0, t - 3, t, 3);
-    };
-    make(grassVariantKey(0), (g) => {
-      baseGrass(g);
-      g.fillStyle(0x3e7032).fillRect(3, 11, 1, 1);
-      g.fillRect(10, 6, 1, 1);
-      g.fillRect(6, 2, 1, 1);
-    });
-    make(grassVariantKey(1), (g) => {
-      baseGrass(g);
-      g.fillStyle(0x3e7032).fillRect(12, 12, 1, 1);
-      g.fillRect(2, 7, 1, 1);
-      g.fillStyle(0x6fbd55).fillRect(8, 9, 1, 1);
-    });
-    make(grassVariantKey(2), (g) => {
-      baseGrass(g);
-      g.fillStyle(0x3e7032).fillRect(5, 5, 1, 1);
-      g.fillRect(13, 3, 1, 1);
-      g.fillRect(9, 13, 1, 1);
-    });
-
-    make(tileKey(TILE.PATH), (g) => {
-      g.fillStyle(0xd6b884).fillRect(0, 0, t, t);
-      g.fillStyle(0xc5a570).fillRect(0, 0, t, 2);
-      g.fillStyle(0xe4cca0, 0.5).fillRect(0, t - 2, t, 2);
-      g.fillStyle(0xa88a55, 0.7).fillRect(3, 5, 1, 1);
-      g.fillRect(11, 9, 1, 1);
-      g.fillRect(7, 13, 1, 1);
-      g.fillRect(13, 3, 1, 1);
-    });
-
-    make(tileKey(TILE.TREE), (g) => {
-      // Dark canopy with leaf bumps + trunk hint.
-      g.fillStyle(0x1f3a1f).fillRect(0, 0, t, t);
-      g.fillStyle(0x2d5a2d).fillRect(1, 1, t - 2, t - 2);
-      g.fillStyle(0x3d7a3d).fillRect(2, 2, 4, 3);
-      g.fillRect(9, 4, 4, 3);
-      g.fillRect(4, 9, 4, 3);
-      g.fillRect(10, 10, 3, 3);
-      g.fillStyle(0x4f9a4f).fillRect(3, 3, 1, 1);
-      g.fillRect(11, 11, 1, 1);
-      g.lineStyle(1, 0x0a1a0a, 1).strokeRect(0, 0, t, t);
-    });
-
-    make(tileKey(TILE.WATER), (g) => {
-      g.fillStyle(0x2e5b9b).fillRect(0, 0, t, t);
-      g.fillStyle(0x4079c0).fillRect(0, 0, t, 5);
-      g.fillStyle(0x6aa0d8, 0.8).fillRect(2, 3, 5, 1);
-      g.fillRect(9, 9, 5, 1);
-      g.fillRect(4, 13, 3, 1);
-      g.fillStyle(0x9ec4e8, 0.7).fillRect(3, 2, 2, 1);
-      g.fillRect(10, 8, 2, 1);
-    });
-
-    make(tileKey(TILE.FLOWER), (g) => {
-      // Grass base + a flower cluster.
-      g.fillStyle(0x5ea744).fillRect(0, 0, t, t);
-      g.fillStyle(0x6fbd55, 0.9).fillRect(0, 0, t, 6);
-      g.fillStyle(0xfde68a).fillRect(7, 5, 2, 2);
-      g.fillStyle(0xf9a8d4).fillRect(6, 7, 2, 2);
-      g.fillRect(9, 7, 2, 2);
-      g.fillRect(7, 9, 2, 2);
-      g.fillStyle(0xc04080).fillRect(7, 8, 1, 1);
-    });
-
-    // Tall-grass base (a grass tile; the FRLG_Grass clump is layered on top).
-    make(tileKey(TILE.TALL_GRASS), baseGrass);
-
-    g.destroy();
+    return this.tileH / 2 + 2;
   }
 }
 
@@ -411,12 +349,4 @@ function walkAnimFor(dir: Dir) {
 // First frame of each row is the standing pose.
 function idleFrameFor(dir: Dir) {
   return { down: 0, left: 4, right: 8, up: 12 }[dir];
-}
-
-function tileKey(tile: number) {
-  return `tile-${tile}`;
-}
-
-function grassVariantKey(i: number) {
-  return `tile-grass-${i}`;
 }

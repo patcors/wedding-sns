@@ -1,5 +1,7 @@
 import Phaser from "phaser";
 import { ASSETS, PLAYER_ANIM } from "../constants";
+import { OVERWORLD } from "../data/maps/overworld";
+import { loadMapAssets } from "../systems/tilemap";
 
 // Preloads assets and hands off to the title screen.
 // Sprite layout for player.png (ripped FRLG Brendan): 128x192, 4 cols x 4 rows,
@@ -14,7 +16,7 @@ export class BootScene extends Phaser.Scene {
       frameWidth: 32,
       frameHeight: 48,
     });
-    this.load.image(ASSETS.GRASS_CLUMP, "/pokemon-phaser/grass-clump.png");
+    loadMapAssets(this, OVERWORLD);
   }
 
   create() {

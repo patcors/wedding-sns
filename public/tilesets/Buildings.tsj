@@ -1,0 +1,20 @@
+{ "columns":59,
+ "image":"Buildings.png",
+ "imageheight":1064,
+ "imagewidth":1002,
+ "margin":0,
+ "name":"Buildings",
+ "properties":[
+        {
+         "name":"collides",
+         "type":"bool",
+         "value":true
+        }],
+ "spacing":1,
+ "tilecount":3658,
+ "tiledversion":"1.12.2",
+ "tileheight":16,
+ "tilewidth":16,
+ "type":"tileset",
+ "version":"1.10"
+}

@@ -8,7 +8,6 @@ export const GAME_HEIGHT = 240;
 // Asset keys — single source of truth so scenes can't typo a key.
 export const ASSETS = {
   PLAYER_SHEET: "player-sheet",
-  GRASS_CLUMP: "grass-clump",
 } as const;
 
 // Player walking animation keys. Match the row layout of player.png.
