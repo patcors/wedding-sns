@@ -9,6 +9,11 @@ type Dir = "up" | "down" | "left" | "right";
 const STEP_MS = 200; // matches the 8fps walk anim — one full cycle per tile
 const RUN_MS = 100; // hold Shift — 2x faster per tile
 
+// Render the world this much bigger than its native 16px tiles, WITHOUT scaling
+// the player — that's what "zoom the world, keep the character as is" means.
+// Keep it an integer so pixel-art tiles stay crisp (1.5 would shimmer).
+const WORLD_SCALE = 2;
+
 export class OverworldScene extends Phaser.Scene {
   private tilemap!: Phaser.Tilemaps.Tilemap;
   private layers: Phaser.Tilemaps.TilemapLayer[] = [];
@@ -52,8 +57,8 @@ export class OverworldScene extends Phaser.Scene {
     this.cameras.main.setBounds(
       0,
       0,
-      this.tilemap.widthInPixels,
-      this.tilemap.heightInPixels,
+      this.tilemap.widthInPixels * WORLD_SCALE,
+      this.tilemap.heightInPixels * WORLD_SCALE,
     );
     this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
     this.cameras.main.setRoundPixels(true);
@@ -118,8 +123,11 @@ export class OverworldScene extends Phaser.Scene {
 
   private buildWorld() {
     this.tilemap = buildTilemap(this, OVERWORLD);
-    this.tileW = this.tilemap.tileWidth;
-    this.tileH = this.tilemap.tileHeight;
+    // tileW/tileH are the *rendered* tile size — the player is positioned on the
+    // scaled grid. The player sprite itself stays native (see buildPlayer), so
+    // the world zooms while the character keeps its size.
+    this.tileW = this.tilemap.tileWidth * WORLD_SCALE;
+    this.tileH = this.tilemap.tileHeight * WORLD_SCALE;
 
     // Render every tile layer in authoring order; mark collidable tiles via the
     // `collides` custom property set on tiles in the tileset (Tiled). Tagging is
@@ -133,6 +141,7 @@ export class OverworldScene extends Phaser.Scene {
         0,
       );
       if (!layer) return;
+      layer.setScale(WORLD_SCALE);
       layer.setDepth(i);
       layer.setCollisionByProperty({ collides: true });
       this.layers.push(layer);
@@ -145,9 +154,10 @@ export class OverworldScene extends Phaser.Scene {
     for (const objectLayer of this.tilemap.objects) {
       const spawn = objectLayer.objects.find((o) => o.name === "spawn");
       if (spawn && spawn.x != null && spawn.y != null) {
+        // Object coords are in the map's native (unscaled) pixels.
         return {
-          x: Math.floor(spawn.x / this.tileW),
-          y: Math.floor(spawn.y / this.tileH),
+          x: Math.floor(spawn.x / this.tilemap.tileWidth),
+          y: Math.floor(spawn.y / this.tilemap.tileHeight),
         };
       }
     }

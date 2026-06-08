@@ -1,5 +1,10 @@
 import Phaser from "phaser";
-import { ASSETS, PLAYER_ANIM } from "../constants";
+import {
+  ASSETS,
+  DEV_DEFAULT_CHARACTER,
+  DEV_SKIP_INTRO,
+  PLAYER_ANIM,
+} from "../constants";
 import { OVERWORLD } from "../data/maps/overworld";
 import { loadMapAssets } from "../systems/tilemap";
 
@@ -21,7 +26,26 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     this.createPlayerAnims();
+
+    if (this.shouldSkipIntro()) {
+      this.registry.set("character", DEV_DEFAULT_CHARACTER);
+      this.scene.start("Overworld");
+      return;
+    }
     this.scene.start("Title");
+  }
+
+  // Dev shortcut: jump straight into the overworld. ?intro forces the real
+  // Title -> CharacterSelect opening even in development.
+  private shouldSkipIntro() {
+    if (!DEV_SKIP_INTRO) return false;
+    if (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("intro")
+    ) {
+      return false;
+    }
+    return true;
   }
 
   private createPlayerAnims() {

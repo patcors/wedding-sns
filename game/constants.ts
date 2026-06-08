@@ -20,6 +20,13 @@ export const PLAYER_ANIM = {
 
 export type CharacterId = "sam" | "sarah";
 
+// --- dev ergonomics ---
+// In development, skip Title + CharacterSelect and drop straight into the
+// overworld so hot-reloads land in-game. Append ?intro to the URL to watch the
+// real opening flow when you need to. Always off in production builds.
+export const DEV_SKIP_INTRO = process.env.NODE_ENV !== "production";
+export const DEV_DEFAULT_CHARACTER: CharacterId = "sam";
+
 export const CHARACTERS: Record<
   CharacterId,
   { id: CharacterId; name: string; accent: number }
