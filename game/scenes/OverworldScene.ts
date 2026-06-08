@@ -7,6 +7,7 @@ import { inputBus } from "../input/bus";
 type Dir = "up" | "down" | "left" | "right";
 
 const STEP_MS = 200; // matches the 8fps walk anim — one full cycle per tile
+const RUN_MS = 100; // hold Shift — 2x faster per tile
 
 export class OverworldScene extends Phaser.Scene {
   private tilemap!: Phaser.Tilemaps.Tilemap;
@@ -226,7 +227,12 @@ export class OverworldScene extends Phaser.Scene {
     this.tileX = nx;
     this.tileY = ny;
 
+    const running = this.isRunning();
+    const duration = running ? RUN_MS : STEP_MS;
+
     this.player.anims.play(walkAnimFor(dir), true);
+    // Speed the leg cycle to match the faster tile step so it doesn't moonwalk.
+    this.player.anims.timeScale = running ? STEP_MS / RUN_MS : 1;
 
     const targetX = nx * this.tileW + this.tileW / 2;
     const targetY = ny * this.tileH + this.tileH / 2;
@@ -234,18 +240,18 @@ export class OverworldScene extends Phaser.Scene {
     this.tweens.add({
       targets: [this.player, this.playerShadow],
       x: targetX,
-      duration: STEP_MS,
+      duration,
     });
     this.tweens.add({
       targets: this.player,
       // Sprite anchors at feet (origin 0.5, 1) — keep that math centralised.
       y: targetY + this.playerYOffset(),
-      duration: STEP_MS,
+      duration,
     });
     this.tweens.add({
       targets: this.playerShadow,
       y: targetY + 6,
-      duration: STEP_MS,
+      duration,
       onComplete: () => {
         // Leave the walk anim running — update() decides whether to stop it
         // based on whether a direction is still held. That keeps the cycle
@@ -283,6 +289,11 @@ export class OverworldScene extends Phaser.Scene {
       duration: 80,
       yoyo: true,
     });
+  }
+
+  // Hold Shift to run. createCursorKeys() exposes the Shift key for us.
+  private isRunning() {
+    return !!this.cursors.shift?.isDown;
   }
 
   private canEnter(x: number, y: number) {
