@@ -45,7 +45,7 @@ export default function GameBoyColor({ topScreen }: Props) {
   const rigRef = useRef<HTMLDivElement>(null);
 
   return (
-    <main className="relative h-[100dvh] w-full overflow-hidden bg-zinc-900 select-none">
+    <main className="relative h-dvh w-full overflow-hidden bg-zinc-900 select-none">
       <div
         ref={rigRef}
         className="absolute overflow-hidden bg-black"

@@ -19,8 +19,20 @@
   }
 }
 
+/* Dark app-shell color behind everything. In an installed PWA the home-screen
+   launch has no browser chrome, so the bottom safe-area / home-indicator strip
+   is exposed; painting <html> dark makes that strip blend with the game's
+   zinc-900 frame instead of flashing the old white body background. */
+html {
+  background-color: #18181b; /* zinc-900, matches the Game Boy frame */
+}
+
 body {
-  background: var(--background);
+  /* Fill the full dynamic viewport so pages cover the safe areas... */
+  min-height: 100dvh;
+  /* ...and stay transparent so the dark <html> shell shows through any gap
+     rather than the previous white. Pages paint their own backgrounds. */
+  background: transparent;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
