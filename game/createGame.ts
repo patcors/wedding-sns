@@ -15,7 +15,12 @@ export function createGame(Phaser: typeof PhaserNS, parent: HTMLElement) {
     roundPixels: true,
     backgroundColor: "#101015",
     scale: {
-      mode: Phaser.Scale.FIT,
+      // ENVELOP = "cover", not "contain": scale 320x240 up until it FILLS the
+      // window on both axes, letting the longer axis overflow. The screen div
+      // (overflow-hidden) clips the spill, so we never get letterbox bars —
+      // landscape crops top/bottom, portrait crops left/right. Same design
+      // resolution on every device, just a different slice of it is visible.
+      mode: Phaser.Scale.ENVELOP,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     fps: { target: 60, forceSetTimeOut: false },
