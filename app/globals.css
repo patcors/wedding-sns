@@ -12,6 +12,21 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* iOS pops a long-press "loupe" magnifier + "Copy/Share" callout on any
+   selectable or tappable element. The hold-to-walk d-pad is a sustained
+   press, so it triggers the loupe constantly. This rule kills text selection
+   across the shell (inputs/textareas excluded so the end-of-run message form
+   stays usable later). The matching `-webkit-touch-callout: none` — the
+   property that actually suppresses the loupe/callout — is applied as an
+   INLINE style on the shell in GameBoyColor.tsx instead of here: Lightning
+   CSS (Tailwind v4's compiler) strips `-webkit-`-prefixed/non-standard
+   properties from stylesheets for its build targets, so it never reached
+   iOS from a .css file. Inline styles bypass that pipeline. */
+.gb-shell,
+.gb-shell *:not(input):not(textarea) {
+  user-select: none;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;

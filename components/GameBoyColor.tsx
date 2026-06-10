@@ -60,7 +60,17 @@ export default function GameBoyColor({ topScreen }: Props) {
   const rigRef = useRef<HTMLDivElement>(null);
 
   return (
-    <main className="relative flex-1 h-full w-full overflow-hidden bg-zinc-900 select-none">
+    <main
+      className="gb-shell relative flex-1 h-full w-full overflow-hidden bg-zinc-900 select-none"
+      // Inline (not in CSS): Lightning CSS strips these from stylesheets, but
+      // `-webkit-touch-callout: none` is what suppresses iOS's long-press
+      // loupe/magnifier. Both properties inherit, so setting them on the shell
+      // covers the d-pad buttons, canvas, and bezel beneath it.
+      style={{
+        WebkitTouchCallout: "none",
+        WebkitUserSelect: "none",
+      }}
+    >
       <div
         ref={rigRef}
         className="absolute overflow-hidden bg-black"
@@ -91,8 +101,25 @@ function hitStyle(style: CSSProperties): CSSProperties {
   };
 }
 
+const HIT_CLASS =
+  "absolute touch-none appearance-none p-0 m-0 outline-none cursor-pointer";
+
+// Each hit-area accepts one rect or several. Pass an array to stitch multiple
+// rectangles into a single logical button (a bigger or L/T-shaped hitbox) —
+// every rect is wired to the same handlers, so a press on any of them counts
+// as the same button.
+function rects(style: CSSProperties | CSSProperties[]): CSSProperties[] {
+  return Array.isArray(style) ? style : [style];
+}
+
 /** Hold-to-walk hit-area: press on pointerdown, release on up/cancel. */
-function DirButton({ dir, style }: { dir: InputDir; style: CSSProperties }) {
+function DirButton({
+  dir,
+  style,
+}: {
+  dir: InputDir;
+  style: CSSProperties | CSSProperties[];
+}) {
   const held = useRef(false);
   const press = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -106,19 +133,22 @@ function DirButton({ dir, style }: { dir: InputDir; style: CSSProperties }) {
     inputBus.release(dir);
   };
   return (
-    <button
-      type="button"
-      aria-label={dir}
-      className={
-        "absolute touch-none appearance-none p-0 m-0 outline-none cursor-pointer"
-      }
-      style={hitStyle(style)}
-      onPointerDown={press}
-      onPointerUp={release}
-      onPointerCancel={release}
-      onPointerLeave={release}
-      onContextMenu={(e) => e.preventDefault()}
-    />
+    <>
+      {rects(style).map((s, i) => (
+        <button
+          key={i}
+          type="button"
+          aria-label={dir}
+          className={HIT_CLASS}
+          style={hitStyle(s)}
+          onPointerDown={press}
+          onPointerUp={release}
+          onPointerCancel={release}
+          onPointerLeave={release}
+          onContextMenu={(e) => e.preventDefault()}
+        />
+      ))}
+    </>
   );
 }
 
@@ -128,23 +158,26 @@ function ActionButton({
   style,
 }: {
   action: InputAction;
-  style: CSSProperties;
+  style: CSSProperties | CSSProperties[];
 }) {
   const fire = (e: React.PointerEvent) => {
     e.preventDefault();
     inputBus.action(action);
   };
   return (
-    <button
-      type="button"
-      aria-label={action}
-      className={
-        "absolute touch-none appearance-none p-0 m-0 outline-none cursor-pointer"
-      }
-      style={hitStyle(style)}
-      onPointerDown={fire}
-      onContextMenu={(e) => e.preventDefault()}
-    />
+    <>
+      {rects(style).map((s, i) => (
+        <button
+          key={i}
+          type="button"
+          aria-label={action}
+          className={HIT_CLASS}
+          style={hitStyle(s)}
+          onPointerDown={fire}
+          onContextMenu={(e) => e.preventDefault()}
+        />
+      ))}
+    </>
   );
 }
 
