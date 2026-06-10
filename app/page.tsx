@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-10 bg-gradient-to-b from-rose-50 to-amber-50 px-6 py-24 text-center font-sans dark:from-zinc-950 dark:to-zinc-900">
+    <main className="flex flex-1 h-full flex-col items-center justify-center gap-10 bg-gradient-to-b from-rose-50 to-amber-50 px-6 py-24 text-center font-sans dark:from-zinc-950 dark:to-zinc-900">
       <div className="flex flex-col items-center gap-4">
         <p className="text-sm uppercase tracking-[0.3em] text-rose-500/80 dark:text-rose-300/70">
           You are invited to

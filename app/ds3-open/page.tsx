@@ -41,7 +41,7 @@ export default function DS3OpenPage() {
   }, []);
 
   return (
-    <main className="relative flex min-h-[100dvh] items-center justify-center bg-zinc-900 p-6">
+    <main className="relative flex min-h-100vh items-center justify-center bg-zinc-900 p-6">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

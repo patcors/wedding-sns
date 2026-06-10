@@ -23,7 +23,7 @@ const SLOTS = {
 
 export default function NintendoDS({ topScreen, bottomScreen }: Props) {
   return (
-    <div className="flex h-[100dvh] w-full items-center justify-center bg-zinc-950 p-2">
+    <div className="flex h-full w-full items-center justify-center bg-zinc-950 p-2">
       <div
         className="relative h-full"
         style={{ aspectRatio: "100 / 130", maxWidth: "100%" }}
@@ -68,22 +68,10 @@ export default function NintendoDS({ topScreen, bottomScreen }: Props) {
           />
           {/* Speaker grilles */}
           {[0, 1, 2].map((i) => (
-            <circle
-              key={`l${i}`}
-              cx={8}
-              cy={20 + i * 4}
-              r={0.7}
-              fill="#999"
-            />
+            <circle key={`l${i}`} cx={8} cy={20 + i * 4} r={0.7} fill="#999" />
           ))}
           {[0, 1, 2].map((i) => (
-            <circle
-              key={`r${i}`}
-              cx={92}
-              cy={20 + i * 4}
-              r={0.7}
-              fill="#999"
-            />
+            <circle key={`r${i}`} cx={92} cy={20 + i * 4} r={0.7} fill="#999" />
           ))}
           {/* Camera/light dots row */}
           <circle cx={48} cy={55.5} r={0.4} fill="#666" />
@@ -320,18 +308,78 @@ function FaceButtonsGfx({
   return (
     <g>
       {/* X (top) */}
-      <circle cx={cx} cy={cy - off} r={r} fill="#e8e8e8" stroke="#bdbdbd" strokeWidth={0.2} />
+      <circle
+        cx={cx}
+        cy={cy - off}
+        r={r}
+        fill="#e8e8e8"
+        stroke="#bdbdbd"
+        strokeWidth={0.2}
+      />
       {/* Y (left) */}
-      <circle cx={cx - off} cy={cy} r={r} fill="#e8e8e8" stroke="#bdbdbd" strokeWidth={0.2} />
+      <circle
+        cx={cx - off}
+        cy={cy}
+        r={r}
+        fill="#e8e8e8"
+        stroke="#bdbdbd"
+        strokeWidth={0.2}
+      />
       {/* A (right) */}
-      <circle cx={cx + off} cy={cy} r={r} fill="#e8e8e8" stroke="#bdbdbd" strokeWidth={0.2} />
+      <circle
+        cx={cx + off}
+        cy={cy}
+        r={r}
+        fill="#e8e8e8"
+        stroke="#bdbdbd"
+        strokeWidth={0.2}
+      />
       {/* B (bottom) */}
-      <circle cx={cx} cy={cy + off} r={r} fill="#e8e8e8" stroke="#bdbdbd" strokeWidth={0.2} />
+      <circle
+        cx={cx}
+        cy={cy + off}
+        r={r}
+        fill="#e8e8e8"
+        stroke="#bdbdbd"
+        strokeWidth={0.2}
+      />
       {/* Letters */}
-      <text x={cx} y={cy - off + 0.8} fontSize={2} textAnchor="middle" fill="#888">X</text>
-      <text x={cx - off} y={cy + 0.8} fontSize={2} textAnchor="middle" fill="#888">Y</text>
-      <text x={cx + off} y={cy + 0.8} fontSize={2} textAnchor="middle" fill="#888">A</text>
-      <text x={cx} y={cy + off + 0.8} fontSize={2} textAnchor="middle" fill="#888">B</text>
+      <text
+        x={cx}
+        y={cy - off + 0.8}
+        fontSize={2}
+        textAnchor="middle"
+        fill="#888"
+      >
+        X
+      </text>
+      <text
+        x={cx - off}
+        y={cy + 0.8}
+        fontSize={2}
+        textAnchor="middle"
+        fill="#888"
+      >
+        Y
+      </text>
+      <text
+        x={cx + off}
+        y={cy + 0.8}
+        fontSize={2}
+        textAnchor="middle"
+        fill="#888"
+      >
+        A
+      </text>
+      <text
+        x={cx}
+        y={cy + off + 0.8}
+        fontSize={2}
+        textAnchor="middle"
+        fill="#888"
+      >
+        B
+      </text>
     </g>
   );
 }

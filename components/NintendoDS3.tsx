@@ -49,7 +49,7 @@ export default function NintendoDS3({
   }, [autoOpen]);
 
   return (
-    <main className="relative flex min-h-[100dvh] w-full items-center justify-center bg-zinc-900 p-2 sm:p-6">
+    <main className="relative flex min-h-full w-full items-center justify-center bg-zinc-900 p-2 sm:p-6">
       <div style={{ perspective: "2400px", width: "min(640px, 100%)" }}>
         <div style={{ position: "relative", aspectRatio: "1561 / 1632" }}>
           {/* Static bottom half — bottom slice of the open photo */}

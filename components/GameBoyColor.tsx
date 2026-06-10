@@ -35,7 +35,7 @@ type Props = {
 
 // Screen window geometry, measured in viewport pixels. The bezel images are
 // fixed to the viewport edges (left 33, right 34, top 40), so the playable
-// screen sits at (33, 40) with size (100vw - 67) × (100dvh - 400).
+// screen sits at (33, 40) with size (100vw - 67) × (100vh - 400).
 const SCREEN_LEFT = 33;
 const SCREEN_TOP = 40;
 const SCREEN_INSET_X = 67; // left 33 + right 34
@@ -45,7 +45,7 @@ export default function GameBoyColor({ topScreen }: Props) {
   const rigRef = useRef<HTMLDivElement>(null);
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-zinc-900 select-none">
+    <main className="relative h-full w-full overflow-hidden bg-zinc-900 select-none">
       <div
         ref={rigRef}
         className="absolute overflow-hidden bg-black"
@@ -53,7 +53,7 @@ export default function GameBoyColor({ topScreen }: Props) {
           left: SCREEN_LEFT,
           top: SCREEN_TOP,
           width: `calc(100vw - ${SCREEN_INSET_X}px)`,
-          height: `calc(100dvh - ${SCREEN_INSET_Y}px)`,
+          height: `calc(100vh - ${SCREEN_INSET_Y}px)`,
         }}
       >
         {topScreen}
@@ -120,7 +120,7 @@ function BottomBand() {
 /** A vertical side bezel, stretched to the middle's full height. */
 function LeftEdge() {
   return (
-    <div className="fixed top-0 bottom-0 left-0 h-dvh">
+    <div className="fixed top-0 bottom-0 left-0 h-screen">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="h-full w-[33px]"
@@ -134,7 +134,7 @@ function LeftEdge() {
 
 function RightEdge() {
   return (
-    <div className="fixed top-0 bottom-0 right-0 h-dvh">
+    <div className="fixed top-0 bottom-0 right-0 h-screen">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="h-full w-[34px]"
