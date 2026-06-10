@@ -47,3 +47,5 @@ next-env.d.ts
 
 # Tiled per-user session state (workspace, open tabs, recent files) — keep .tiled-project committed
 *.tiled-session
+
+.claude/*

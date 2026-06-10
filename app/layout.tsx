@@ -50,6 +50,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // Browser extensions inject attributes (e.g. __gcrremoteframetoken) onto
+      // <html> before React hydrates, causing a benign attribute-level mismatch.
+      // Scoped to this element only — it won't mask real mismatches in children.
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-screen antialiased`}
     >
       <body className="flex flex-col">{children}</body>

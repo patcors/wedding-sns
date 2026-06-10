@@ -27,6 +27,8 @@ const SRC = {
   bottomFill: `${ASSET}/gameboy_colour_bottom_fill.png`,
   sideRight: `${ASSET}/gameboy_colour_right_fill.png`,
   sideLeft: `${ASSET}/gameboy_colour_left_fill.png`,
+  gameboyColourLogo: `${ASSET}/gameboy_colour_logo.png`,
+  gameboyColourNintendoLogo: `${ASSET}/gameboy_colour_nintendo_logo.png`,
 };
 
 type Props = {
@@ -45,7 +47,7 @@ export default function GameBoyColor({ topScreen }: Props) {
   const rigRef = useRef<HTMLDivElement>(null);
 
   return (
-    <main className="relative h-full w-full overflow-hidden bg-zinc-900 select-none">
+    <main className="relative flex-1 h-full w-full overflow-hidden bg-zinc-900 select-none">
       <div
         ref={rigRef}
         className="absolute overflow-hidden bg-black"
@@ -62,7 +64,37 @@ export default function GameBoyColor({ topScreen }: Props) {
       <RightEdge />
       <TopBand />
       <BottomBand />
+      <GameboyColourLogo />
+      <GameboyColourNintendoLogo />
     </main>
+  );
+}
+
+function GameboyColourLogo() {
+  return (
+    <div className="fixed bottom-[310px] left-0 flex w-full h-[40px] items-center justify-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="h-[40px] w-2/3 max-w-[320px]"
+        src={SRC.gameboyColourLogo}
+        alt=""
+        draggable={false}
+      />
+    </div>
+  );
+}
+
+function GameboyColourNintendoLogo() {
+  return (
+    <div className="fixed bottom-[220px] left-0 flex w-full h-[40px] items-center justify-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="h-[40px] max-w-1/3"
+        src={SRC.gameboyColourNintendoLogo}
+        alt=""
+        draggable={false}
+      />
+    </div>
   );
 }
 
