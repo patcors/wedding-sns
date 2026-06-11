@@ -46,7 +46,7 @@ type Props = {
 // Flip to true to paint the invisible hit-areas so they can be lined up with
 // the printed buttons, then flip back. Positions below are percentages of the
 // owning corner image and are meant to be hand-tuned against the artwork.
-const DEBUG_CONTROLS = false;
+const DEBUG_CONTROLS = true;
 
 // Screen window geometry, measured in viewport pixels. The bezel images are
 // fixed to the viewport edges (left 33, right 34, top 40), so the playable
@@ -183,7 +183,7 @@ function ActionButton({
 
 function GameboyColourLogo() {
   return (
-    <div className="fixed bottom-[310px] left-0 flex w-full h-[40px] items-center justify-center">
+    <div className="pointer-events-none fixed bottom-[310px] left-0 flex w-full h-[40px] items-center justify-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="h-[40px] w-2/3 max-w-[320px] pointer-events-none select-none"
@@ -197,7 +197,7 @@ function GameboyColourLogo() {
 
 function GameboyColourNintendoLogo() {
   return (
-    <div className="fixed bottom-[220px] left-0 flex w-full h-[40px] items-center justify-center">
+    <div className="pointer-events-none fixed bottom-[220px] left-0 flex w-full h-[40px] items-center justify-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="h-[40px] max-w-1/3 pointer-events-none select-none"
@@ -251,27 +251,74 @@ function BottomBand() {
           draggable={false}
         />
         {/* D-pad: a square over the cross, split into the four arms. */}
-        <div
-          className="absolute"
-          style={{ left: "19%", top: "29%", width: "46%", height: "29%" }}
-        >
-          <DirButton
-            dir="up"
-            style={{ left: "30%", top: "-26%", width: "40%", height: "60%" }}
-          />
-          <DirButton
-            dir="down"
-            style={{ left: "30%", top: "62%", width: "40%", height: "60%" }}
-          />
-          <DirButton
-            dir="left"
-            style={{ left: "-30%", top: "33%", width: "60%", height: "30%" }}
-          />
-          <DirButton
-            dir="right"
-            style={{ left: "67%", top: "33%", width: "60%", height: "30%" }}
-          />
-        </div>
+        <DirButton
+          dir="up"
+          style={[
+            {
+              bottom: "220px",
+              left: "58px",
+              width: "30px",
+              height: "60px",
+            },
+            {
+              bottom: "250px",
+              left: "35px",
+              width: "80px",
+              height: "30px",
+            },
+          ]}
+        />
+        <DirButton
+          dir="down"
+          style={[
+            {
+              bottom: "130px",
+              left: "58px",
+              width: "30px",
+              height: "60px",
+            },
+            {
+              bottom: "130px",
+              left: "35px",
+              width: "80px",
+              height: "30px",
+            },
+          ]}
+        />
+        <DirButton
+          dir="left"
+          style={[
+            {
+              bottom: "175px",
+              left: "10px",
+              width: "30px",
+              height: "60px",
+            },
+            {
+              bottom: "190px",
+              left: "35px",
+              width: "40px",
+              height: "30px",
+            },
+          ]}
+        />
+        <DirButton
+          dir="right"
+          style={[
+            {
+              bottom: "175px",
+              left: "110px",
+              width: "30px",
+              height: "60px",
+            },
+            {
+              bottom: "190px",
+              left: "70px",
+              width: "40px",
+              height: "30px",
+            },
+          ]}
+        />
         <ActionButton
           action="select"
           style={{ left: "72%", top: "66%", width: "26%", height: "9%" }}
