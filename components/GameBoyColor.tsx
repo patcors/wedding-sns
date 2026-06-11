@@ -46,7 +46,7 @@ type Props = {
 // Flip to true to paint the invisible hit-areas so they can be lined up with
 // the printed buttons, then flip back. Positions below are percentages of the
 // owning corner image and are meant to be hand-tuned against the artwork.
-const DEBUG_CONTROLS = true;
+const DEBUG_CONTROLS = false;
 
 // Screen window geometry, measured in viewport pixels. The bezel images are
 // fixed to the viewport edges (left 33, right 34, top 40), so the playable
@@ -112,43 +112,116 @@ function rects(style: CSSProperties | CSSProperties[]): CSSProperties[] {
   return Array.isArray(style) ? style : [style];
 }
 
-/** Hold-to-walk hit-area: press on pointerdown, release on up/cancel. */
-function DirButton({
-  dir,
-  style,
-}: {
-  dir: InputDir;
-  style: CSSProperties | CSSProperties[];
-}) {
-  const held = useRef(false);
-  const press = (e: React.PointerEvent) => {
+// D-pad geometry, relative to the bottom-left artwork. One box over the whole
+// cross (the union of the old four per-arm hitboxes): left arm starts at
+// x=10, right arm ends at x=140, down arm starts at bottom=130, up arm ends
+// at bottom=280. The pivot (cross centre) is the box centre: (75, bottom 205).
+const DPAD_BOX: CSSProperties = {
+  left: "10px",
+  bottom: "130px",
+  width: "130px",
+  height: "150px",
+};
+// No direction registers within this radius of the pivot (like the physical
+// pivot of a real d-pad), so a thumb resting dead-centre doesn't jitter
+// between arms.
+const DPAD_DEAD_ZONE = 12;
+// How far outside the box a captured pointer can wander before the held
+// direction releases, as a fraction of the box size. Generous on purpose:
+// rolling thumbs drift.
+const DPAD_SLACK = 0.4;
+
+/**
+ * Classify a pointer position into a d-pad direction. Dominant axis wins, so
+ * the diagonal corners of the box snap to the nearest arm — that's what makes
+ * rolling the thumb between arms feel continuous instead of dropping out over
+ * the gap between the old per-arm rectangles.
+ */
+function dirAt(
+  clientX: number,
+  clientY: number,
+  box: DOMRect,
+): InputDir | null {
+  const slackX = box.width * DPAD_SLACK;
+  const slackY = box.height * DPAD_SLACK;
+  if (
+    clientX < box.left - slackX ||
+    clientX > box.right + slackX ||
+    clientY < box.top - slackY ||
+    clientY > box.bottom + slackY
+  ) {
+    return null;
+  }
+  const dx = clientX - (box.left + box.width / 2);
+  const dy = clientY - (box.top + box.height / 2);
+  if (Math.hypot(dx, dy) < DPAD_DEAD_ZONE) return null;
+  if (Math.abs(dx) > Math.abs(dy)) return dx < 0 ? "left" : "right";
+  return dy < 0 ? "up" : "down";
+}
+
+/**
+ * The whole d-pad as a single hit-area. Each active pointer is tracked by
+ * pointerId and re-classified on every move, so a thumb can roll from one arm
+ * to the next without lifting, and several fingers can ride the pad at once.
+ * Presses are refcounted per direction: the bus only sees press on 0→1 and
+ * release on 1→0, so two fingers holding the same arm don't cancel each other
+ * when one lifts.
+ */
+function DPad() {
+  const pointers = useRef(new Map<number, InputDir>());
+  const counts = useRef<Record<InputDir, number>>({
+    up: 0,
+    down: 0,
+    left: 0,
+    right: 0,
+  });
+
+  const setDir = (pointerId: number, next: InputDir | null) => {
+    const prev = pointers.current.get(pointerId) ?? null;
+    if (prev === next) return;
+    if (prev && --counts.current[prev] === 0) inputBus.release(prev);
+    if (next) {
+      pointers.current.set(pointerId, next);
+      if (++counts.current[next] === 1) inputBus.press(next);
+    } else {
+      pointers.current.delete(pointerId);
+    }
+  };
+
+  const down = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (held.current) return;
-    held.current = true;
-    inputBus.press(dir);
+    // Touch pointers capture implicitly; this makes mouse drags match, and
+    // capture is what keeps move/up events coming to us after the pointer
+    // leaves the box mid-roll.
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDir(
+      e.pointerId,
+      dirAt(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect()),
+    );
   };
-  const release = () => {
-    if (!held.current) return;
-    held.current = false;
-    inputBus.release(dir);
+  const move = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    setDir(
+      e.pointerId,
+      dirAt(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect()),
+    );
   };
+  const up = (e: React.PointerEvent<HTMLDivElement>) => {
+    setDir(e.pointerId, null);
+  };
+
   return (
-    <>
-      {rects(style).map((s, i) => (
-        <button
-          key={i}
-          type="button"
-          aria-label={dir}
-          className={HIT_CLASS}
-          style={hitStyle(s)}
-          onPointerDown={press}
-          onPointerUp={release}
-          onPointerCancel={release}
-          onPointerLeave={release}
-          onContextMenu={(e) => e.preventDefault()}
-        />
-      ))}
-    </>
+    <div
+      role="group"
+      aria-label="d-pad"
+      className={HIT_CLASS}
+      style={hitStyle(DPAD_BOX)}
+      onPointerDown={down}
+      onPointerMove={move}
+      onPointerUp={up}
+      onPointerCancel={up}
+      onContextMenu={(e) => e.preventDefault()}
+    />
   );
 }
 
@@ -250,75 +323,9 @@ function BottomBand() {
           alt=""
           draggable={false}
         />
-        {/* D-pad: a square over the cross, split into the four arms. */}
-        <DirButton
-          dir="up"
-          style={[
-            {
-              bottom: "220px",
-              left: "58px",
-              width: "30px",
-              height: "60px",
-            },
-            {
-              bottom: "250px",
-              left: "35px",
-              width: "80px",
-              height: "30px",
-            },
-          ]}
-        />
-        <DirButton
-          dir="down"
-          style={[
-            {
-              bottom: "130px",
-              left: "58px",
-              width: "30px",
-              height: "60px",
-            },
-            {
-              bottom: "130px",
-              left: "35px",
-              width: "80px",
-              height: "30px",
-            },
-          ]}
-        />
-        <DirButton
-          dir="left"
-          style={[
-            {
-              bottom: "175px",
-              left: "10px",
-              width: "30px",
-              height: "60px",
-            },
-            {
-              bottom: "190px",
-              left: "35px",
-              width: "40px",
-              height: "30px",
-            },
-          ]}
-        />
-        <DirButton
-          dir="right"
-          style={[
-            {
-              bottom: "175px",
-              left: "110px",
-              width: "30px",
-              height: "60px",
-            },
-            {
-              bottom: "190px",
-              left: "70px",
-              width: "40px",
-              height: "30px",
-            },
-          ]}
-        />
+        {/* D-pad: one hit-area over the whole cross; direction is computed
+            from the pointer position so the thumb can roll between arms. */}
+        <DPad />
         <ActionButton
           action="select"
           style={{ left: "72%", top: "66%", width: "26%", height: "9%" }}
