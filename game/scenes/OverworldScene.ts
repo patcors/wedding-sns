@@ -10,6 +10,7 @@ import {
 import { OVERWORLD } from "../data/maps/overworld";
 import { buildTilemap } from "../systems/tilemap";
 import { inputBus } from "../input/bus";
+import { viewportZoom } from "../systems/viewport";
 
 const STEP_MS = 200; // matches the 8fps walk anim — one full cycle per tile
 const RUN_MS = 70; // hold Shift — ~3x walk speed; run anim keeps the legs in step
@@ -50,6 +51,12 @@ export class OverworldScene extends Phaser.Scene {
     super("Overworld");
   }
 
+  // Bound field so on()/off() share one reference. Sets the camera zoom so a
+  // fixed 240px-tall slice of world fills the (variable-size) canvas height.
+  private applyViewportZoom = () => {
+    this.cameras.main.setZoom(viewportZoom(this.scale));
+  };
+
   create() {
     this.buildWorld();
 
@@ -79,6 +86,16 @@ export class OverworldScene extends Phaser.Scene {
     // scrolls smoothly because player.x itself is tweened per tile.
     this.cameras.main.startFollow(this.player, true, 1, 1);
     this.cameras.main.setRoundPixels(true);
+
+    // Scale.RESIZE keeps the camera viewport == the canvas == the GameBoy
+    // screen, so we only set the zoom (how much world fills that screen) and let
+    // bounds-clamping happen at the true visible edges. Re-apply on resize so an
+    // orientation change keeps the same vertical slice of world.
+    this.applyViewportZoom();
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.applyViewportZoom);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, this.applyViewportZoom);
+    });
 
     this.bindKeys();
     this.bindExternalInput();

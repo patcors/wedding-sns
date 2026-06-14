@@ -63,6 +63,20 @@ const SCREEN_TOP = 40;
 const SCREEN_INSET_X = 67; // left 33 + right 34
 const SCREEN_INSET_Y = 400; // top 40 + bottom body 360
 
+// Cap the console width so it doesn't stretch absurdly wide on desktop. The
+// whole layout is fixed/100vw-based, so instead of restructuring we clamp the
+// effective width (--gb-width) and add equal side gutters (--gb-gutter) that
+// centre it: every full-width piece is shifted right by the gutter and sized to
+// --gb-width, so the console behaves as if the viewport were at most 550px wide.
+const GB_MAX_WIDTH = 550;
+
+// Cap the whole console frame height so it doesn't stretch absurdly tall on big
+// desktop monitors. On a taller viewport the console tops out at this height and
+// is centred vertically — the `--gb-top-gutter` below is the equal top/bottom
+// margin, applied to every viewport-anchored piece (bands, edges, logos, screen)
+// so they all lift together. The screen window is derived: device − SCREEN_INSET_Y.
+const GB_MAX_HEIGHT = 950;
+
 export default function GameBoyColor({ topScreen }: Props) {
   const rigRef = useRef<HTMLDivElement>(null);
 
@@ -77,20 +91,27 @@ export default function GameBoyColor({ topScreen }: Props) {
       // `-webkit-touch-callout: none` is what suppresses iOS's long-press
       // loupe/magnifier. Both properties inherit, so setting them on the shell
       // covers the d-pad buttons, canvas, and bezel beneath it.
-      style={{
-        backgroundColor: GB_YELLOW,
-        WebkitTouchCallout: "none",
-        WebkitUserSelect: "none",
-      }}
+      style={
+        {
+          backgroundColor: GB_YELLOW,
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
+          "--gb-width": `min(100vw, ${GB_MAX_WIDTH}px)`,
+          "--gb-gutter": `max(0px, (100vw - ${GB_MAX_WIDTH}px) / 2)`,
+          // Equal top/bottom margin that centres the console once it hits its
+          // height cap; 0 while the viewport is shorter than the cap.
+          "--gb-top-gutter": `max(0px, (100vh - env(safe-area-inset-top, 0px) - ${GB_MAX_HEIGHT}px) / 2)`,
+        } as CSSProperties
+      }
     >
       <div
         ref={rigRef}
         className="absolute overflow-hidden bg-black"
         style={{
-          left: SCREEN_LEFT,
-          top: `calc(${SCREEN_TOP}px + env(safe-area-inset-top, 0px))`,
-          width: `calc(100vw - ${SCREEN_INSET_X}px)`,
-          height: `calc(100vh - ${SCREEN_INSET_Y}px - env(safe-area-inset-top, 0px))`,
+          left: `calc(${SCREEN_LEFT}px + var(--gb-gutter))`,
+          top: `calc(${SCREEN_TOP}px + env(safe-area-inset-top, 0px) + var(--gb-top-gutter))`,
+          width: `calc(var(--gb-width) - ${SCREEN_INSET_X}px)`,
+          height: `calc(min(100vh - env(safe-area-inset-top, 0px), ${GB_MAX_HEIGHT}px) - ${SCREEN_INSET_Y}px)`,
         }}
       >
         {topScreen}
@@ -284,7 +305,14 @@ function ActionButton({
 
 function GameboyColourLogo() {
   return (
-    <div className="pointer-events-none fixed bottom-[310px] left-0 flex w-full h-[40px] items-center justify-center">
+    <div
+      className="pointer-events-none fixed flex h-[40px] items-center justify-center"
+      style={{
+        bottom: "calc(310px + var(--gb-top-gutter))",
+        left: "var(--gb-gutter)",
+        width: "var(--gb-width)",
+      }}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="h-[40px] w-2/3 max-w-[320px] pointer-events-none select-none"
@@ -298,7 +326,14 @@ function GameboyColourLogo() {
 
 function GameboyColourNintendoLogo() {
   return (
-    <div className="pointer-events-none fixed bottom-[220px] left-0 flex w-full h-[40px] items-center justify-center">
+    <div
+      className="pointer-events-none fixed flex h-[40px] items-center justify-center"
+      style={{
+        bottom: "calc(220px + var(--gb-top-gutter))",
+        left: "var(--gb-gutter)",
+        width: "var(--gb-width)",
+      }}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="h-[40px] max-w-1/3 pointer-events-none select-none"
@@ -313,8 +348,12 @@ function GameboyColourNintendoLogo() {
 function TopBand() {
   return (
     <div
-      className="fixed left-0 right-0 flex flex-row w-full h-[40px]"
-      style={{ top: "env(safe-area-inset-top, 0px)" }}
+      className="fixed flex flex-row h-[40px]"
+      style={{
+        top: "calc(env(safe-area-inset-top, 0px) + var(--gb-top-gutter))",
+        left: "var(--gb-gutter)",
+        width: "var(--gb-width)",
+      }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -343,7 +382,14 @@ function TopBand() {
 
 function BottomBand() {
   return (
-    <div className="fixed bottom-0 left-0 right-0 flex flex-row h-90">
+    <div
+      className="fixed flex flex-row h-90"
+      style={{
+        bottom: "var(--gb-top-gutter)",
+        left: "var(--gb-gutter)",
+        width: "var(--gb-width)",
+      }}
+    >
       {/* Bottom-left artwork: d-pad + Select. Wrapper keeps the image's box as
           the positioning context for the overlaid hit-areas. */}
       <div className="relative flex-none h-full">
@@ -402,8 +448,12 @@ function BottomBand() {
 function LeftEdge() {
   return (
     <div
-      className="fixed bottom-0 left-0"
-      style={{ top: "env(safe-area-inset-top, 0px)" }}
+      className="fixed"
+      style={{
+        top: "calc(env(safe-area-inset-top, 0px) + var(--gb-top-gutter))",
+        bottom: "var(--gb-top-gutter)",
+        left: "var(--gb-gutter)",
+      }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -419,8 +469,12 @@ function LeftEdge() {
 function RightEdge() {
   return (
     <div
-      className="fixed bottom-0 right-0"
-      style={{ top: "env(safe-area-inset-top, 0px)" }}
+      className="fixed"
+      style={{
+        top: "calc(env(safe-area-inset-top, 0px) + var(--gb-top-gutter))",
+        bottom: "var(--gb-top-gutter)",
+        right: "var(--gb-gutter)",
+      }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

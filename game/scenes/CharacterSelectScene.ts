@@ -6,6 +6,7 @@ import {
   GAME_HEIGHT,
   GAME_WIDTH,
 } from "../constants";
+import { DESIGN_CENTER, viewportZoom } from "../systems/viewport";
 
 type Slot = {
   id: CharacterId;
@@ -21,8 +22,21 @@ export class CharacterSelectScene extends Phaser.Scene {
     super("CharacterSelect");
   }
 
+  // Content is laid out around the fixed design centre; the camera zooms to the
+  // canvas and centres on that point, so it stays centred at any aspect ratio.
+  private reflow = () => {
+    this.cameras.main.setZoom(viewportZoom(this.scale));
+    this.cameras.main.centerOn(...DESIGN_CENTER);
+  };
+
   create() {
     const cx = GAME_WIDTH / 2;
+
+    this.reflow();
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.reflow);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, this.reflow);
+    });
 
     this.add
       .text(cx, 20, "CHOOSE YOUR HERO", {
