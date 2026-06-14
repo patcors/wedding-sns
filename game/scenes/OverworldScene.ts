@@ -20,6 +20,10 @@ const RUN_MS = 70; // hold Shift — ~3x walk speed; run anim keeps the legs in 
 // Keep it an integer so pixel-art tiles stay crisp (1.5 would shimmer).
 const WORLD_SCALE = 1;
 
+// Depth floor for "above-player" tile layers. The player is depth 10 (see
+// buildPlayer); anything from here up renders over the character.
+const ABOVE_PLAYER_DEPTH = 20;
+
 export class OverworldScene extends Phaser.Scene {
   private tilemap!: Phaser.Tilemaps.Tilemap;
   private layers: Phaser.Tilemaps.TilemapLayer[] = [];
@@ -166,6 +170,14 @@ export class OverworldScene extends Phaser.Scene {
     // Render every tile layer in authoring order; mark collidable tiles via the
     // `collides` custom property set on tiles in the tileset (Tiled). Tagging is
     // done in Tiled — until tiles carry `collides=true`, only the map edge blocks.
+    //
+    // Layers flagged with the Tiled custom property `above-player` (bool) draw
+    // OVER the character (treetops, roof eaves, archway tops) so the player can
+    // walk behind them. The player sits at depth 10 (see buildPlayer), so these
+    // get pushed well above that; everything else stays beneath. Above-player
+    // layers are purely decorative overlap — collision comes from the ground
+    // tiles below them, so we don't tag them collidable or add them to the
+    // collision-checked `layers` list.
     this.layers = [];
     this.tilemap.layers.forEach((layerData, i) => {
       const layer = this.tilemap.createLayer(
@@ -176,6 +188,12 @@ export class OverworldScene extends Phaser.Scene {
       );
       if (!layer) return;
       layer.setScale(WORLD_SCALE);
+
+      if (isAbovePlayerLayer(layerData)) {
+        layer.setDepth(ABOVE_PLAYER_DEPTH + i);
+        return;
+      }
+
       layer.setDepth(i);
       layer.setCollisionByProperty({ collides: true });
       this.layers.push(layer);
@@ -397,6 +415,23 @@ export class OverworldScene extends Phaser.Scene {
   private playerYOffset() {
     return this.tileH / 2 + 2;
   }
+}
+
+// True when a Tiled tile layer carries the custom property `above-player` set to
+// true. Tiled exports layer properties as an array of {name, type, value}; some
+// Phaser paths normalise them to a plain object, so handle both shapes.
+function isAbovePlayerLayer(layerData: Phaser.Tilemaps.LayerData): boolean {
+  const props = (layerData as { properties?: unknown }).properties;
+  if (Array.isArray(props)) {
+    return props.some(
+      (p: { name?: string; value?: unknown }) =>
+        p?.name === "above-player" && p.value === true,
+    );
+  }
+  if (props && typeof props === "object") {
+    return (props as Record<string, unknown>)["above-player"] === true;
+  }
+  return false;
 }
 
 function dirToDelta(dir: Dir): [number, number] {
