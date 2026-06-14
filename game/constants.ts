@@ -5,20 +5,82 @@
 export const GAME_WIDTH = 320;
 export const GAME_HEIGHT = 240;
 
-// Asset keys — single source of truth so scenes can't typo a key.
-export const ASSETS = {
-  PLAYER_SHEET: "player-sheet",
-} as const;
-
-// Player walking animation keys. Match the row layout of player.png.
-export const PLAYER_ANIM = {
-  walkDown: "player-walk-down",
-  walkLeft: "player-walk-left",
-  walkRight: "player-walk-right",
-  walkUp: "player-walk-up",
-} as const;
-
 export type CharacterId = "sam" | "sarah";
+
+export type Dir = "up" | "down" | "left" | "right";
+
+// Per-direction frame index lists. For a Pokémon walk cycle the natural pattern
+// is [idle, step, idle, otherStep]; for a sheet whose row IS the 4-frame cycle
+// (like the Brendan sheet) it's just the four frames in order.
+type DirFrames = Record<Dir, number[]>;
+
+// A character's spritesheet + how its frames map to walk/run animations. This is
+// the single source of truth — scenes build sprites and anims from this, so a new
+// playable character is a data-only edit here (+ the PNG in public/).
+export type CharacterSprite = {
+  /** Phaser texture/asset key. */
+  sheetKey: string;
+  /** Path under public/. */
+  texturePath: string;
+  frameWidth: number;
+  frameHeight: number;
+  /** Idle (standing) frame per direction. */
+  idle: Record<Dir, number>;
+  /** Walk-cycle frames per direction. */
+  walk: DirFrames;
+  /** Run-cycle frames per direction. Omitted when the sheet has no run row. */
+  run?: DirFrames;
+  /** Walk animation frame rate (fps). */
+  frameRate: number;
+};
+
+export const CHARACTER_SPRITES: Record<CharacterId, CharacterSprite> = {
+  // Ripped FRLG Brendan: 128x192, 4 cols x 4 rows of 32x48. Row order:
+  // down, left, right, up — each row is the full 4-frame walk cycle.
+  sam: {
+    sheetKey: "sam-sheet",
+    texturePath: "/pokemon-phaser/player.png",
+    frameWidth: 32,
+    frameHeight: 48,
+    idle: { down: 0, left: 4, right: 8, up: 12 },
+    walk: {
+      down: [0, 1, 2, 3],
+      left: [4, 5, 6, 7],
+      right: [8, 9, 10, 11],
+      up: [12, 13, 14, 15],
+    },
+    frameRate: 8,
+  },
+  // Custom Sarah sheet (sarah-animation.png): 96x256, 3 cols x 8 rows of 32x32.
+  // Each row has 3 unique cells [idle, stepA, stepB]; the walk cycle plays them
+  // idle->stepA->idle->stepB. Rows 0-3 are walk (down/right/up/left), rows 4-7
+  // are run (down/right/up/left). See sarah-animation.json frameTags.
+  sarah: {
+    sheetKey: "sarah-sheet",
+    texturePath: "/playable-characters/sarah-animation.png",
+    frameWidth: 32,
+    frameHeight: 32,
+    idle: { down: 0, right: 3, up: 6, left: 9 },
+    walk: {
+      down: [0, 1, 0, 2],
+      right: [3, 4, 3, 5],
+      up: [6, 7, 6, 8],
+      left: [9, 10, 9, 11],
+    },
+    run: {
+      down: [12, 13, 12, 14],
+      right: [15, 16, 15, 17],
+      up: [18, 19, 18, 20],
+      left: [21, 22, 21, 23],
+    },
+    frameRate: 8,
+  },
+};
+
+// Animation keys are namespaced per character so two sheets never collide.
+export function animKey(id: CharacterId, gait: "walk" | "run", dir: Dir) {
+  return `${id}-${gait}-${dir}`;
+}
 
 // --- dev ergonomics ---
 // In development, skip Title + CharacterSelect and drop straight into the

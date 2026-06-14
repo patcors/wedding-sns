@@ -1,10 +1,15 @@
 import Phaser from "phaser";
-import { ASSETS, CHARACTERS, CharacterId, PLAYER_ANIM } from "../constants";
+import {
+  animKey,
+  CHARACTER_SPRITES,
+  CHARACTERS,
+  CharacterId,
+  CharacterSprite,
+  Dir,
+} from "../constants";
 import { OVERWORLD } from "../data/maps/overworld";
 import { buildTilemap } from "../systems/tilemap";
 import { inputBus } from "../input/bus";
-
-type Dir = "up" | "down" | "left" | "right";
 
 const STEP_MS = 200; // matches the 8fps walk anim — one full cycle per tile
 const RUN_MS = 100; // hold Shift — 2x faster per tile
@@ -12,7 +17,7 @@ const RUN_MS = 100; // hold Shift — 2x faster per tile
 // Render the world this much bigger than its native 16px tiles, WITHOUT scaling
 // the player — that's what "zoom the world, keep the character as is" means.
 // Keep it an integer so pixel-art tiles stay crisp (1.5 would shimmer).
-const WORLD_SCALE = 2;
+const WORLD_SCALE = 1;
 
 export class OverworldScene extends Phaser.Scene {
   private tilemap!: Phaser.Tilemaps.Tilemap;
@@ -22,6 +27,8 @@ export class OverworldScene extends Phaser.Scene {
 
   private player!: Phaser.GameObjects.Sprite;
   private playerShadow!: Phaser.GameObjects.Ellipse;
+  private character: CharacterId = "sam";
+  private sprite!: CharacterSprite;
   private tileX = 0;
   private tileY = 0;
   private moving = false;
@@ -43,13 +50,14 @@ export class OverworldScene extends Phaser.Scene {
   create() {
     this.buildWorld();
 
-    const character =
+    this.character =
       (this.registry.get("character") as CharacterId | undefined) ?? "sam";
+    this.sprite = CHARACTER_SPRITES[this.character];
 
     const spawn = this.findSpawn();
     this.tileX = spawn.x;
     this.tileY = spawn.y;
-    this.buildPlayer(character);
+    this.buildPlayer();
     this.placePlayer();
 
     // Camera follows the player around the larger world. No arcade physics —
@@ -68,7 +76,7 @@ export class OverworldScene extends Phaser.Scene {
     this.bindTap();
 
     this.add
-      .text(4, 4, CHARACTERS[character].name, {
+      .text(4, 4, CHARACTERS[this.character].name, {
         fontFamily: "monospace",
         fontSize: "8px",
         color: "#ffffff",
@@ -115,7 +123,7 @@ export class OverworldScene extends Phaser.Scene {
     } else if (this.player.anims.isPlaying) {
       // No direction held and the step just finished — settle into idle.
       this.player.anims.stop();
-      this.player.setFrame(idleFrameFor(this.facing));
+      this.player.setFrame(this.sprite.idle[this.facing]);
     }
   }
 
@@ -240,9 +248,14 @@ export class OverworldScene extends Phaser.Scene {
     const running = this.isRunning();
     const duration = running ? RUN_MS : STEP_MS;
 
-    this.player.anims.play(walkAnimFor(dir), true);
-    // Speed the leg cycle to match the faster tile step so it doesn't moonwalk.
-    this.player.anims.timeScale = running ? STEP_MS / RUN_MS : 1;
+    // Use the dedicated run cycle when the sheet has one; otherwise reuse the
+    // walk anim sped up so the legs keep pace with the faster tile step.
+    const useRunAnim = running && !!this.sprite.run;
+    this.player.anims.play(
+      animKey(this.character, useRunAnim ? "run" : "walk", dir),
+      true,
+    );
+    this.player.anims.timeScale = running && !useRunAnim ? STEP_MS / RUN_MS : 1;
 
     const targetX = nx * this.tileW + this.tileW / 2;
     const targetY = ny * this.tileH + this.tileH / 2;
@@ -275,7 +288,8 @@ export class OverworldScene extends Phaser.Scene {
     if (this.moving) return;
     this.moving = true;
     this.facing = dir;
-    this.player.setFrame(idleFrameFor(dir));
+    this.player.anims.stop();
+    this.player.setFrame(this.sprite.idle[dir]);
     const [dx, dy] = dirToDelta(dir);
     const baseX = this.tileX * this.tileW + this.tileW / 2;
     const baseY = this.tileY * this.tileH + this.tileH / 2;
@@ -327,19 +341,23 @@ export class OverworldScene extends Phaser.Scene {
     this.playerShadow.setPosition(cx, cy + 6);
   }
 
-  private buildPlayer(id: CharacterId) {
-    // The Brendan sheet is 32x48; we anchor at its feet so y maps to the tile.
-    // TODO: source a May/Leaf sheet for Sarah — for now Sarah is tinted Brendan.
+  private buildPlayer() {
+    // Anchor at the sprite's feet so y maps onto the tile regardless of the
+    // sheet's frame height (Sam is 32x48, Sarah 32x32).
     this.playerShadow = this.add.ellipse(0, 0, 14, 5, 0x000000, 0.35);
     this.playerShadow.setDepth(9);
-    this.player = this.add.sprite(0, 0, ASSETS.PLAYER_SHEET, 0);
+    this.player = this.add.sprite(
+      0,
+      0,
+      this.sprite.sheetKey,
+      this.sprite.idle.down,
+    );
     this.player.setOrigin(0.5, 1);
     this.player.setDepth(10);
-    if (id === "sarah") this.player.setTint(CHARACTERS.sarah.accent);
   }
 
-  // Player sprite is 48px tall and anchored at feet. Feet should sit slightly
-  // below the tile center so it visually stands on the tile.
+  // Sprite is anchored at its feet; nudge them just below the tile center so the
+  // character visually stands on the tile.
   private playerYOffset() {
     return this.tileH / 2 + 2;
   }
@@ -356,18 +374,4 @@ function dirToDelta(dir: Dir): [number, number] {
     case "right":
       return [1, 0];
   }
-}
-
-function walkAnimFor(dir: Dir) {
-  return {
-    up: PLAYER_ANIM.walkUp,
-    down: PLAYER_ANIM.walkDown,
-    left: PLAYER_ANIM.walkLeft,
-    right: PLAYER_ANIM.walkRight,
-  }[dir];
-}
-
-// First frame of each row is the standing pose.
-function idleFrameFor(dir: Dir) {
-  return { down: 0, left: 4, right: 8, up: 12 }[dir];
 }

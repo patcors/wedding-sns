@@ -1,31 +1,38 @@
 import Phaser from "phaser";
 import {
-  ASSETS,
+  animKey,
+  CHARACTER_SPRITES,
+  CharacterSprite,
   DEV_DEFAULT_CHARACTER,
   DEV_SKIP_INTRO,
-  PLAYER_ANIM,
+  Dir,
 } from "../constants";
 import { OVERWORLD } from "../data/maps/overworld";
 import { loadMapAssets } from "../systems/tilemap";
 
-// Preloads assets and hands off to the title screen.
-// Sprite layout for player.png (ripped FRLG Brendan): 128x192, 4 cols x 4 rows,
-// each frame 32x48. Row order: down, left, right, up (4 walk frames each).
+const DIRS: Dir[] = ["down", "left", "right", "up"];
+
+// Preloads assets and hands off to the title screen. Each playable character
+// gets its own spritesheet + walk/run anims, all driven by CHARACTER_SPRITES.
 export class BootScene extends Phaser.Scene {
   constructor() {
     super("Boot");
   }
 
   preload() {
-    this.load.spritesheet(ASSETS.PLAYER_SHEET, "/pokemon-phaser/player.png", {
-      frameWidth: 32,
-      frameHeight: 48,
-    });
+    for (const sprite of Object.values(CHARACTER_SPRITES)) {
+      this.load.spritesheet(sprite.sheetKey, sprite.texturePath, {
+        frameWidth: sprite.frameWidth,
+        frameHeight: sprite.frameHeight,
+      });
+    }
     loadMapAssets(this, OVERWORLD);
   }
 
   create() {
-    this.createPlayerAnims();
+    for (const [id, sprite] of Object.entries(CHARACTER_SPRITES)) {
+      this.createCharacterAnims(id as keyof typeof CHARACTER_SPRITES, sprite);
+    }
 
     if (this.shouldSkipIntro()) {
       this.registry.set("character", DEV_DEFAULT_CHARACTER);
@@ -48,32 +55,30 @@ export class BootScene extends Phaser.Scene {
     return true;
   }
 
-  private createPlayerAnims() {
-    const sheet = ASSETS.PLAYER_SHEET;
-    const rate = 8;
-    this.anims.create({
-      key: PLAYER_ANIM.walkDown,
-      frames: this.anims.generateFrameNumbers(sheet, { start: 0, end: 3 }),
-      frameRate: rate,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: PLAYER_ANIM.walkLeft,
-      frames: this.anims.generateFrameNumbers(sheet, { start: 4, end: 7 }),
-      frameRate: rate,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: PLAYER_ANIM.walkRight,
-      frames: this.anims.generateFrameNumbers(sheet, { start: 8, end: 11 }),
-      frameRate: rate,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: PLAYER_ANIM.walkUp,
-      frames: this.anims.generateFrameNumbers(sheet, { start: 12, end: 15 }),
-      frameRate: rate,
-      repeat: -1,
-    });
+  private createCharacterAnims(
+    id: keyof typeof CHARACTER_SPRITES,
+    sprite: CharacterSprite,
+  ) {
+    for (const dir of DIRS) {
+      this.anims.create({
+        key: animKey(id, "walk", dir),
+        frames: this.anims.generateFrameNumbers(sprite.sheetKey, {
+          frames: sprite.walk[dir],
+        }),
+        frameRate: sprite.frameRate,
+        repeat: -1,
+      });
+      if (sprite.run) {
+        this.anims.create({
+          key: animKey(id, "run", dir),
+          frames: this.anims.generateFrameNumbers(sprite.sheetKey, {
+            frames: sprite.run[dir],
+          }),
+          // Run a touch faster than walk so the legs keep up with the 2x step.
+          frameRate: sprite.frameRate * 1.6,
+          repeat: -1,
+        });
+      }
+    }
   }
 }

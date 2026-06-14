@@ -1,5 +1,11 @@
 import Phaser from "phaser";
-import { ASSETS, CHARACTERS, CharacterId, GAME_HEIGHT, GAME_WIDTH } from "../constants";
+import {
+  CHARACTER_SPRITES,
+  CHARACTERS,
+  CharacterId,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+} from "../constants";
 
 type Slot = {
   id: CharacterId;
@@ -68,10 +74,11 @@ export class CharacterSelectScene extends Phaser.Scene {
       .rectangle(0, 0, 48, 72, 0x1c1c24)
       .setStrokeStyle(1, 0x2e2e3a);
 
-    // Real Brendan sprite, frame 0 = facing-down idle.
-    // TODO: distinct May/Leaf sheet for Sarah — tinted for now.
-    const sprite = this.add.sprite(0, -2, ASSETS.PLAYER_SHEET, 0).setOrigin(0.5, 0.5);
-    if (id === "sarah") sprite.setTint(CHARACTERS.sarah.accent);
+    // Each character's own sheet, facing-down idle frame.
+    const cfg = CHARACTER_SPRITES[id];
+    const sprite = this.add
+      .sprite(0, -2, cfg.sheetKey, cfg.idle.down)
+      .setOrigin(0.5, 0.5);
 
     const label = this.add
       .text(0, 28, char.name.toUpperCase(), {
