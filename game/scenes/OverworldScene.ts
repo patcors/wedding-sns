@@ -12,7 +12,7 @@ import { buildTilemap } from "../systems/tilemap";
 import { inputBus } from "../input/bus";
 
 const STEP_MS = 200; // matches the 8fps walk anim — one full cycle per tile
-const RUN_MS = 100; // hold Shift — 2x faster per tile
+const RUN_MS = 70; // hold Shift — ~3x walk speed; run anim keeps the legs in step
 
 // Render the world this much bigger than its native 16px tiles, WITHOUT scaling
 // the player — that's what "zoom the world, keep the character as is" means.

@@ -35,11 +35,11 @@ export type CharacterSprite = {
 };
 
 export const CHARACTER_SPRITES: Record<CharacterId, CharacterSprite> = {
-  // Custom Sam sheet (sam-animation.png): 96x256, 3 cols x 8 rows of 32x32 —
+  // Custom Sam sheet (sam-sprites.png): 96x256, 3 cols x 8 rows of 32x32 —
   // same layout as Sarah's (see below).
   sam: {
     sheetKey: "sam-sheet",
-    texturePath: "/playable-characters/sam-animation.png",
+    texturePath: "/playable-characters/sam-sprites.png",
     frameWidth: 32,
     frameHeight: 32,
     idle: { down: 0, right: 3, up: 6, left: 9 },
@@ -57,13 +57,13 @@ export const CHARACTER_SPRITES: Record<CharacterId, CharacterSprite> = {
     },
     frameRate: 8,
   },
-  // Custom Sarah sheet (sarah-animation.png): 96x256, 3 cols x 8 rows of 32x32.
+  // Custom Sarah sheet (sarah-sprites.png): 96x256, 3 cols x 8 rows of 32x32.
   // Each row has 3 unique cells [idle, stepA, stepB]; the walk cycle plays them
   // idle->stepA->idle->stepB. Rows 0-3 are walk (down/right/up/left), rows 4-7
-  // are run (down/right/up/left). See sarah-animation.json frameTags.
+  // are run (down/right/up/left). See sarah-sprites.json frameTags.
   sarah: {
     sheetKey: "sarah-sheet",
-    texturePath: "/playable-characters/sarah-animation.png",
+    texturePath: "/playable-characters/sarah-sprites.png",
     frameWidth: 32,
     frameHeight: 32,
     idle: { down: 0, right: 3, up: 6, left: 9 },

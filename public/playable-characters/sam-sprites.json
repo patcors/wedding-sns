@@ -1,6 +1,6 @@
 {
   "frames": {
-    "Sarah 0.aseprite": {
+    "sam 0.aseprite": {
       "frame": { "x": 0, "y": 0, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -8,7 +8,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 1.aseprite": {
+    "sam 1.aseprite": {
       "frame": { "x": 32, "y": 0, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -16,7 +16,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 2.aseprite": {
+    "sam 2.aseprite": {
       "frame": { "x": 0, "y": 0, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -24,7 +24,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 3.aseprite": {
+    "sam 3.aseprite": {
       "frame": { "x": 64, "y": 0, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -32,7 +32,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 4.aseprite": {
+    "sam 4.aseprite": {
       "frame": { "x": 0, "y": 32, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -40,7 +40,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 5.aseprite": {
+    "sam 5.aseprite": {
       "frame": { "x": 32, "y": 32, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -48,7 +48,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 6.aseprite": {
+    "sam 6.aseprite": {
       "frame": { "x": 0, "y": 32, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -56,7 +56,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 7.aseprite": {
+    "sam 7.aseprite": {
       "frame": { "x": 64, "y": 32, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -64,7 +64,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 8.aseprite": {
+    "sam 8.aseprite": {
       "frame": { "x": 0, "y": 64, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -72,7 +72,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 9.aseprite": {
+    "sam 9.aseprite": {
       "frame": { "x": 32, "y": 64, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -80,7 +80,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 10.aseprite": {
+    "sam 10.aseprite": {
       "frame": { "x": 0, "y": 64, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -88,7 +88,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 11.aseprite": {
+    "sam 11.aseprite": {
       "frame": { "x": 64, "y": 64, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -96,7 +96,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 12.aseprite": {
+    "sam 12.aseprite": {
       "frame": { "x": 0, "y": 96, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -104,7 +104,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 13.aseprite": {
+    "sam 13.aseprite": {
       "frame": { "x": 32, "y": 96, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -112,7 +112,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 14.aseprite": {
+    "sam 14.aseprite": {
       "frame": { "x": 0, "y": 96, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -120,7 +120,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 15.aseprite": {
+    "sam 15.aseprite": {
       "frame": { "x": 64, "y": 96, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -128,7 +128,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 16.aseprite": {
+    "sam 16.aseprite": {
       "frame": { "x": 0, "y": 128, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -136,7 +136,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 17.aseprite": {
+    "sam 17.aseprite": {
       "frame": { "x": 32, "y": 128, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -144,7 +144,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 18.aseprite": {
+    "sam 18.aseprite": {
       "frame": { "x": 0, "y": 128, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -152,7 +152,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 19.aseprite": {
+    "sam 19.aseprite": {
       "frame": { "x": 64, "y": 128, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -160,7 +160,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 20.aseprite": {
+    "sam 20.aseprite": {
       "frame": { "x": 0, "y": 160, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -168,7 +168,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 21.aseprite": {
+    "sam 21.aseprite": {
       "frame": { "x": 32, "y": 160, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -176,7 +176,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 22.aseprite": {
+    "sam 22.aseprite": {
       "frame": { "x": 0, "y": 160, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -184,7 +184,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 23.aseprite": {
+    "sam 23.aseprite": {
       "frame": { "x": 64, "y": 160, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -192,7 +192,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 24.aseprite": {
+    "sam 24.aseprite": {
       "frame": { "x": 0, "y": 192, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -200,7 +200,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 25.aseprite": {
+    "sam 25.aseprite": {
       "frame": { "x": 32, "y": 192, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -208,7 +208,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 26.aseprite": {
+    "sam 26.aseprite": {
       "frame": { "x": 0, "y": 192, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -216,7 +216,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 27.aseprite": {
+    "sam 27.aseprite": {
       "frame": { "x": 64, "y": 192, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -224,7 +224,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 28.aseprite": {
+    "sam 28.aseprite": {
       "frame": { "x": 0, "y": 224, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -232,7 +232,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 29.aseprite": {
+    "sam 29.aseprite": {
       "frame": { "x": 32, "y": 224, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -240,7 +240,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 30.aseprite": {
+    "sam 30.aseprite": {
       "frame": { "x": 0, "y": 224, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -248,7 +248,7 @@
       "sourceSize": { "w": 32, "h": 32 },
       "duration": 100
     },
-    "Sarah 31.aseprite": {
+    "sam 31.aseprite": {
       "frame": { "x": 64, "y": 224, "w": 32, "h": 32 },
       "rotated": false,
       "trimmed": false,
@@ -260,7 +260,7 @@
   "meta": {
     "app": "https://www.aseprite.org/",
     "version": "1.x-dev",
-    "image": "sarah-animation.png",
+    "image": "sam-sprites.png",
     "format": "RGBA8888",
     "size": { "w": 96, "h": 256 },
     "scale": "1",
@@ -315,7 +315,7 @@
         "color": "#000000ff"
       },
       {
-        "name": "run-right",
+        "name": "run-left",
         "from": 28,
         "to": 31,
         "direction": "forward",

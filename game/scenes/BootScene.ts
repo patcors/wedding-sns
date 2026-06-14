@@ -74,8 +74,9 @@ export class BootScene extends Phaser.Scene {
           frames: this.anims.generateFrameNumbers(sprite.sheetKey, {
             frames: sprite.run[dir],
           }),
-          // Run a touch faster than walk so the legs keep up with the 2x step.
-          frameRate: sprite.frameRate * 1.6,
+          // Legs cycle ~2.5x walk so they keep pace with the faster run step
+          // (RUN_MS ≈ STEP_MS/2.9) instead of moonwalking.
+          frameRate: sprite.frameRate * 2.5,
           repeat: -1,
         });
       }
