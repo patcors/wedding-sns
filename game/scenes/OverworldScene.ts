@@ -42,6 +42,9 @@ export class OverworldScene extends Phaser.Scene {
     left: false,
     right: false,
   };
+  // True while the on-screen B button is held (see bindExternalInput); the
+  // keyboard equivalent is Shift, checked separately in isRunning().
+  private running = false;
 
   constructor() {
     super("Overworld");
@@ -204,9 +207,18 @@ export class OverworldScene extends Phaser.Scene {
     const offRelease = inputBus.onRelease((dir) => {
       this.pressed[dir] = false;
     });
+    // Hold B to run (mirrors holding Shift on the keyboard).
+    const offActionPress = inputBus.onActionPress((action) => {
+      if (action === "b") this.running = true;
+    });
+    const offActionRelease = inputBus.onActionRelease((action) => {
+      if (action === "b") this.running = false;
+    });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       offPress();
       offRelease();
+      offActionPress();
+      offActionRelease();
     });
   }
 
@@ -321,9 +333,10 @@ export class OverworldScene extends Phaser.Scene {
     });
   }
 
-  // Hold Shift to run. createCursorKeys() exposes the Shift key for us.
+  // Hold Shift (keyboard) or the B button (touch) to run. createCursorKeys()
+  // exposes the Shift key for us; `running` tracks the B button via the bus.
   private isRunning() {
-    return !!this.cursors.shift?.isDown;
+    return !!this.cursors.shift?.isDown || this.running;
   }
 
   private canEnter(x: number, y: number) {

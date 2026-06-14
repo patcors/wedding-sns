@@ -14,6 +14,8 @@ type ActionListener = (action: InputAction) => void;
 const pressDirListeners = new Set<DirListener>();
 const releaseDirListeners = new Set<DirListener>();
 const actionListeners = new Set<ActionListener>();
+const pressActionListeners = new Set<ActionListener>();
+const releaseActionListeners = new Set<ActionListener>();
 
 export const inputBus = {
   press(dir: InputDir) {
@@ -24,6 +26,15 @@ export const inputBus = {
   },
   action(action: InputAction) {
     actionListeners.forEach((fn) => fn(action));
+  },
+  // Hold-state for action buttons (e.g. hold B to run). `pressAction` fires on
+  // pointerdown, `releaseAction` on pointerup. Separate from the one-shot
+  // `action` above so a button can drive both (tap = confirm, hold = run).
+  pressAction(action: InputAction) {
+    pressActionListeners.forEach((fn) => fn(action));
+  },
+  releaseAction(action: InputAction) {
+    releaseActionListeners.forEach((fn) => fn(action));
   },
   onPress(fn: DirListener) {
     pressDirListeners.add(fn);
@@ -41,6 +52,18 @@ export const inputBus = {
     actionListeners.add(fn);
     return () => {
       actionListeners.delete(fn);
+    };
+  },
+  onActionPress(fn: ActionListener) {
+    pressActionListeners.add(fn);
+    return () => {
+      pressActionListeners.delete(fn);
+    };
+  },
+  onActionRelease(fn: ActionListener) {
+    releaseActionListeners.add(fn);
+    return () => {
+      releaseActionListeners.delete(fn);
     };
   },
 };

@@ -28,7 +28,7 @@ import { inputBus, type InputAction, type InputDir } from "@/game/input/bus";
 // Dandelion yellow of the Game Boy Color body (sampled from the bezel art).
 // Painted behind the notch / top safe-area strip so the exposed status-bar
 // region blends into the console instead of flashing the dark shell.
-const GB_YELLOW = "#efa700";
+const GB_YELLOW = "#f1b000";
 
 const ASSET = "/gameboy";
 const SRC = {
@@ -237,17 +237,30 @@ function DPad() {
   );
 }
 
-/** One-shot hit-area for A / B / Start / Select. */
+/**
+ * Hit-area for A / B / Start / Select.
+ *
+ * Always emits the one-shot `action` on pointerdown (tap = confirm/cancel).
+ * With `hold`, it also emits press/release so the scene can track the button
+ * being held — e.g. hold B to run.
+ */
 function ActionButton({
   action,
   style,
+  hold = false,
 }: {
   action: InputAction;
   style: CSSProperties | CSSProperties[];
+  hold?: boolean;
 }) {
-  const fire = (e: React.PointerEvent) => {
+  const press = (e: React.PointerEvent) => {
     e.preventDefault();
     inputBus.action(action);
+    if (hold) inputBus.pressAction(action);
+  };
+  const release = (e: React.PointerEvent) => {
+    e.preventDefault();
+    if (hold) inputBus.releaseAction(action);
   };
   return (
     <>
@@ -258,7 +271,10 @@ function ActionButton({
           aria-label={action}
           className={HIT_CLASS}
           style={hitStyle(s)}
-          onPointerDown={fire}
+          onPointerDown={press}
+          onPointerUp={hold ? release : undefined}
+          onPointerLeave={hold ? release : undefined}
+          onPointerCancel={hold ? release : undefined}
           onContextMenu={(e) => e.preventDefault()}
         />
       ))}
@@ -366,6 +382,7 @@ function BottomBand() {
         />
         <ActionButton
           action="b"
+          hold
           style={{ left: "20%", top: "38%", width: "26%", height: "15%" }}
         />
         <ActionButton
