@@ -35,19 +35,25 @@ export type CharacterSprite = {
 };
 
 export const CHARACTER_SPRITES: Record<CharacterId, CharacterSprite> = {
-  // Ripped FRLG Brendan: 128x192, 4 cols x 4 rows of 32x48. Row order:
-  // down, left, right, up — each row is the full 4-frame walk cycle.
+  // Custom Sam sheet (sam-animation.png): 96x256, 3 cols x 8 rows of 32x32 —
+  // same layout as Sarah's (see below).
   sam: {
     sheetKey: "sam-sheet",
-    texturePath: "/pokemon-phaser/player.png",
+    texturePath: "/playable-characters/sam-animation.png",
     frameWidth: 32,
-    frameHeight: 48,
-    idle: { down: 0, left: 4, right: 8, up: 12 },
+    frameHeight: 32,
+    idle: { down: 0, right: 3, up: 6, left: 9 },
     walk: {
-      down: [0, 1, 2, 3],
-      left: [4, 5, 6, 7],
-      right: [8, 9, 10, 11],
-      up: [12, 13, 14, 15],
+      down: [0, 1, 0, 2],
+      right: [3, 4, 3, 5],
+      up: [6, 7, 6, 8],
+      left: [9, 10, 9, 11],
+    },
+    run: {
+      down: [12, 13, 12, 14],
+      right: [15, 16, 15, 17],
+      up: [18, 19, 18, 20],
+      left: [21, 22, 21, 23],
     },
     frameRate: 8,
   },
