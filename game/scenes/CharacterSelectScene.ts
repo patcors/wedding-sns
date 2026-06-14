@@ -6,6 +6,7 @@ import {
   GAME_HEIGHT,
   GAME_WIDTH,
 } from "../constants";
+import { inputBus } from "../input/bus";
 import { DESIGN_CENTER, viewportZoom } from "../systems/viewport";
 
 type Slot = {
@@ -57,8 +58,25 @@ export class CharacterSelectScene extends Phaser.Scene {
 
     this.input.keyboard?.on("keydown-LEFT", () => this.move(-1));
     this.input.keyboard?.on("keydown-RIGHT", () => this.move(1));
+    this.input.keyboard?.on("keydown-A", () => this.move(-1));
+    this.input.keyboard?.on("keydown-D", () => this.move(1));
     this.input.keyboard?.on("keydown-ENTER", () => this.confirm());
     this.input.keyboard?.on("keydown-SPACE", () => this.confirm());
+
+    // On-screen D-pad / buttons routed through the input bus: left/right move
+    // the cursor, A confirms. Released on shutdown.
+    const unsubs = [
+      inputBus.onPress((dir) => {
+        if (dir === "left") this.move(-1);
+        else if (dir === "right") this.move(1);
+      }),
+      inputBus.onAction((action) => {
+        if (action === "a" || action === "start") this.confirm();
+      }),
+    ];
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      unsubs.forEach((off) => off());
+    });
 
     this.slots.forEach((slot, i) => {
       slot.container

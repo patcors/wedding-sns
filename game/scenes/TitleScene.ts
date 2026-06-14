@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { GAME_HEIGHT, GAME_WIDTH } from "../constants";
+import { inputBus } from "../input/bus";
 import { DESIGN_CENTER, viewportZoom } from "../systems/viewport";
 
 export class TitleScene extends Phaser.Scene {
@@ -56,8 +57,25 @@ export class TitleScene extends Phaser.Scene {
       repeat: -1,
     });
 
-    const advance = () => this.scene.start("CharacterSelect");
+    // Any input advances — pointer, hardware keyboard, or the on-screen
+    // D-pad / A-B buttons routed through the input bus. Guard so the
+    // teardown only runs once and the bus subscriptions are released.
+    let started = false;
+    const unsubs: Array<() => void> = [];
+    const advance = () => {
+      if (started) return;
+      started = true;
+      unsubs.forEach((off) => off());
+      this.scene.start("CharacterSelect");
+    };
+
     this.input.once("pointerdown", advance);
     this.input.keyboard?.once("keydown", advance);
+    unsubs.push(inputBus.onPress(advance));
+    unsubs.push(inputBus.onAction(advance));
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      unsubs.forEach((off) => off());
+    });
   }
 }
