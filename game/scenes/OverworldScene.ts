@@ -68,7 +68,13 @@ export class OverworldScene extends Phaser.Scene {
       this.tilemap.widthInPixels * WORLD_SCALE,
       this.tilemap.heightInPixels * WORLD_SCALE,
     );
-    this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
+    // Lerp = 1 (locked follow), NOT eased. With roundPixels on, an eased
+    // camera lags the tween and `round(player.x - scrollX)` wobbles ±1px —
+    // visible as directional stutter (worse going right, since Math.round
+    // biases toward +inf). Locking the camera keeps the player at a fixed
+    // screen position, so it's smooth in every direction; the world still
+    // scrolls smoothly because player.x itself is tweened per tile.
+    this.cameras.main.startFollow(this.player, true, 1, 1);
     this.cameras.main.setRoundPixels(true);
 
     this.bindKeys();
