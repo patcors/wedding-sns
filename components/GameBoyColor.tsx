@@ -25,6 +25,11 @@ import { inputBus, type InputAction, type InputDir } from "@/game/input/bus";
 // width, so the fractions track the artwork as the screen scales). Each button
 // pokes the input bus, which the live Phaser scene subscribes to.
 
+// Dandelion yellow of the Game Boy Color body (sampled from the bezel art).
+// Painted behind the notch / top safe-area strip so the exposed status-bar
+// region blends into the console instead of flashing the dark shell.
+const GB_YELLOW = "#efa700";
+
 const ASSET = "/gameboy";
 const SRC = {
   topLeft: `${ASSET}/gameboy_colour_top_left.png`,
@@ -50,7 +55,9 @@ const DEBUG_CONTROLS = false;
 
 // Screen window geometry, measured in viewport pixels. The bezel images are
 // fixed to the viewport edges (left 33, right 34, top 40), so the playable
-// screen sits at (33, 40) with size (100vw - 67) × (100vh - 400).
+// screen sits at (33, 40) with size (100vw - 67) × (100vh - 400). The top
+// pieces (screen, top band, side edges) are additionally pushed down by
+// env(safe-area-inset-top) so the whole console clears the iOS notch.
 const SCREEN_LEFT = 33;
 const SCREEN_TOP = 40;
 const SCREEN_INSET_X = 67; // left 33 + right 34
@@ -60,13 +67,18 @@ export default function GameBoyColor({ topScreen }: Props) {
   const rigRef = useRef<HTMLDivElement>(null);
 
   return (
+    // The shell fills the whole viewport (notch included) and is painted
+    // GameBoy-yellow. The console pieces below are each pushed down by the top
+    // safe-area inset, so the only part of the yellow shell left showing is the
+    // notch strip — on an iOS PWA the notch reads as yellow console plastic.
     <main
-      className="gb-shell relative flex-1 h-full w-full overflow-hidden bg-zinc-900 select-none"
+      className="gb-shell relative flex-1 h-full w-full overflow-hidden select-none"
       // Inline (not in CSS): Lightning CSS strips these from stylesheets, but
       // `-webkit-touch-callout: none` is what suppresses iOS's long-press
       // loupe/magnifier. Both properties inherit, so setting them on the shell
       // covers the d-pad buttons, canvas, and bezel beneath it.
       style={{
+        backgroundColor: GB_YELLOW,
         WebkitTouchCallout: "none",
         WebkitUserSelect: "none",
       }}
@@ -76,9 +88,9 @@ export default function GameBoyColor({ topScreen }: Props) {
         className="absolute overflow-hidden bg-black"
         style={{
           left: SCREEN_LEFT,
-          top: SCREEN_TOP,
+          top: `calc(${SCREEN_TOP}px + env(safe-area-inset-top, 0px))`,
           width: `calc(100vw - ${SCREEN_INSET_X}px)`,
-          height: `calc(100vh - ${SCREEN_INSET_Y}px)`,
+          height: `calc(100vh - ${SCREEN_INSET_Y}px - env(safe-area-inset-top, 0px))`,
         }}
       >
         {topScreen}
@@ -284,7 +296,10 @@ function GameboyColourNintendoLogo() {
 
 function TopBand() {
   return (
-    <div className="fixed top-0 left-0 right-0 flex flex-row w-full h-[40px]">
+    <div
+      className="fixed left-0 right-0 flex flex-row w-full h-[40px]"
+      style={{ top: "env(safe-area-inset-top, 0px)" }}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="flex-none h-full w-[172px] pointer-events-none select-none"
@@ -369,7 +384,10 @@ function BottomBand() {
 /** A vertical side bezel, stretched to the middle's full height. */
 function LeftEdge() {
   return (
-    <div className="fixed top-0 bottom-0 left-0 h-screen">
+    <div
+      className="fixed bottom-0 left-0"
+      style={{ top: "env(safe-area-inset-top, 0px)" }}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="h-full w-[33px] pointer-events-none select-none"
@@ -383,7 +401,10 @@ function LeftEdge() {
 
 function RightEdge() {
   return (
-    <div className="fixed top-0 bottom-0 right-0 h-screen">
+    <div
+      className="fixed bottom-0 right-0"
+      style={{ top: "env(safe-area-inset-top, 0px)" }}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="h-full w-[34px] pointer-events-none select-none"
