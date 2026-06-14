@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import {
   animKey,
+  BUSH_RUSTLE_ANIM,
+  BUSH_SHEET,
   CHARACTER_SPRITES,
   CHARACTERS,
   CharacterId,
@@ -20,9 +22,14 @@ const RUN_MS = 70; // hold Shift — ~3x walk speed; run anim keeps the legs in 
 // Keep it an integer so pixel-art tiles stay crisp (1.5 would shimmer).
 const WORLD_SCALE = 1;
 
-// Depth floor for "above-player" tile layers. The player is depth 10 (see
-// buildPlayer); anything from here up renders over the character.
-const ABOVE_PLAYER_DEPTH = 20;
+// Depth bands. The player, bushes and other props are Y-SORTED: their depth IS
+// their base (feet) world-Y, so whoever is further south draws on top — that's
+// what lets the player pass behind a bush from the north and in front from the
+// south. World-Y maxes out at the map height in pixels (a few hundred), so the
+// always-on-top bands sit far above that, and ground layers far below it.
+const ABOVE_PLAYER_DEPTH = 100_000; // roofs / treetops — always over everything
+const LEAF_DEPTH = 90_000; // rustle particles — over props, under roofs
+const HUD_DEPTH = 1_000_000; // screen-fixed name tag — over all of the above
 
 export class OverworldScene extends Phaser.Scene {
   private tilemap!: Phaser.Tilemaps.Tilemap;
@@ -32,6 +39,10 @@ export class OverworldScene extends Phaser.Scene {
 
   private player!: Phaser.GameObjects.Sprite;
   private playerShadow!: Phaser.GameObjects.Ellipse;
+  // Bush sprites converted from `bush=true` tiles, keyed by "x,y" tile coords so
+  // a step can look up the bush it just walked into and rustle it.
+  private bushes = new Map<string, Phaser.GameObjects.Sprite>();
+  private leafEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private character: CharacterId = "sam";
   private sprite!: CharacterSprite;
   private tileX = 0;
@@ -63,6 +74,7 @@ export class OverworldScene extends Phaser.Scene {
 
   create() {
     this.buildWorld();
+    this.buildLeafEmitter();
 
     this.character =
       (this.registry.get("character") as CharacterId | undefined) ?? "sam";
@@ -114,12 +126,18 @@ export class OverworldScene extends Phaser.Scene {
         padding: { left: 3, right: 3, top: 1, bottom: 1 },
       })
       .setScrollFactor(0)
-      .setDepth(100);
+      .setDepth(HUD_DEPTH);
 
     this.cameras.main.fadeIn(300, 0, 0, 0);
   }
 
   update() {
+    // Y-sort the player against bushes every frame (even mid-step) so crossing a
+    // bush's base line flips over/under at the right pixel. Player origin is its
+    // feet, so player.y IS the sort key; the shadow rides just beneath it.
+    this.player.setDepth(this.player.y);
+    this.playerShadow.setDepth(this.player.y - 1);
+
     if (this.moving) return;
 
     // Hold-to-walk: isDown re-fires every frame while the key is held, so when
@@ -173,12 +191,13 @@ export class OverworldScene extends Phaser.Scene {
     //
     // Layers flagged with the Tiled custom property `above-player` (bool) draw
     // OVER the character (treetops, roof eaves, archway tops) so the player can
-    // walk behind them. The player sits at depth 10 (see buildPlayer), so these
-    // get pushed well above that; everything else stays beneath. Above-player
-    // layers are purely decorative overlap — collision comes from the ground
-    // tiles below them, so we don't tag them collidable or add them to the
-    // collision-checked `layers` list.
+    // walk behind them. The player is Y-sorted (depth = feet Y, a few hundred at
+    // most), so these get pushed to ABOVE_PLAYER_DEPTH to clear it; everything
+    // else stays beneath. Above-player layers are purely decorative overlap —
+    // collision comes from the ground tiles below them, so we don't tag them
+    // collidable or add them to the collision-checked `layers` list.
     this.layers = [];
+    const allLayers: Phaser.Tilemaps.TilemapLayer[] = [];
     this.tilemap.layers.forEach((layerData, i) => {
       const layer = this.tilemap.createLayer(
         layerData.name,
@@ -188,6 +207,7 @@ export class OverworldScene extends Phaser.Scene {
       );
       if (!layer) return;
       layer.setScale(WORLD_SCALE);
+      allLayers.push(layer);
 
       if (isAbovePlayerLayer(layerData)) {
         layer.setDepth(ABOVE_PLAYER_DEPTH + i);
@@ -198,6 +218,61 @@ export class OverworldScene extends Phaser.Scene {
       layer.setCollisionByProperty({ collides: true });
       this.layers.push(layer);
     });
+
+    // Convert `bush=true` tiles (wherever they're painted) into Y-sorted sprites
+    // so the player can pass behind or in front of them and they can rustle.
+    this.extractBushes(allLayers);
+  }
+
+  // Replace every tile carrying the Tiled custom property `bush=true` with an
+  // animated bush sprite anchored at its base, then delete the marker tile so it
+  // doesn't double-draw. The sprite's depth is its base Y (Y-sort), and the
+  // ground layer beneath shows through the now-empty cell.
+  private extractBushes(layers: Phaser.Tilemaps.TilemapLayer[]) {
+    for (const layer of layers) {
+      layer.forEachTile((tile) => {
+        if (tile.properties?.bush !== true) return;
+        const cx = tile.x * this.tileW + this.tileW / 2;
+        const baseY = (tile.y + 1) * this.tileH;
+        const bush = this.add
+          .sprite(cx, baseY, BUSH_SHEET, 0)
+          .setOrigin(0.5, 1)
+          .setDepth(baseY);
+        this.bushes.set(tileKey(tile.x, tile.y), bush);
+        layer.removeTileAt(tile.x, tile.y);
+      });
+    }
+  }
+
+  // A pooled emitter reused for every rustle — a quick upward puff of leaf specks
+  // that arc back down under gravity. The 2px "leaf" texture is generated once
+  // and tinted green per particle, so no art asset is needed.
+  private buildLeafEmitter() {
+    if (!this.textures.exists("leaf")) {
+      const g = this.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0xffffff, 1).fillRect(0, 0, 2, 2);
+      g.generateTexture("leaf", 2, 2);
+      g.destroy();
+    }
+    this.leafEmitter = this.add
+      .particles(0, 0, "leaf", {
+        lifespan: 450,
+        speed: { min: 18, max: 42 },
+        angle: { min: 250, max: 290 }, // fan upward (270 = straight up)
+        gravityY: 220,
+        scale: { start: 1.4, end: 0 },
+        alpha: { start: 1, end: 0 },
+        rotate: { min: 0, max: 360 },
+        tint: [0x2e7d32, 0x3f7d3a, 0x4caf50, 0x6ab04c],
+        emitting: false,
+      })
+      .setDepth(LEAF_DEPTH);
+  }
+
+  // Shake a bush's leaves and spit a few specks — fired when the player walks in.
+  private rustle(bush: Phaser.GameObjects.Sprite) {
+    bush.play(BUSH_RUSTLE_ANIM, true);
+    this.leafEmitter.emitParticleAt(bush.x, bush.y - this.tileH * 0.6, 5);
   }
 
   // Spawn from an object-layer Point named "spawn"; fall back to map center so
@@ -298,6 +373,10 @@ export class OverworldScene extends Phaser.Scene {
     this.tileX = nx;
     this.tileY = ny;
 
+    // Walking into a bush tile rustles it (and pops a few leaves).
+    const bush = this.bushes.get(tileKey(nx, ny));
+    if (bush) this.rustle(bush);
+
     const running = this.isRunning();
     const duration = running ? RUN_MS : STEP_MS;
 
@@ -393,13 +472,16 @@ export class OverworldScene extends Phaser.Scene {
     const cy = this.tileY * this.tileH + this.tileH / 2;
     this.player.setPosition(cx, cy + this.playerYOffset());
     this.playerShadow.setPosition(cx, cy + 6);
+    // Seed the Y-sort depth so the first rendered frame is already correct;
+    // update() keeps it in step thereafter.
+    this.player.setDepth(this.player.y);
+    this.playerShadow.setDepth(this.player.y - 1);
   }
 
   private buildPlayer() {
     // Anchor at the sprite's feet so y maps onto the tile regardless of the
     // sheet's frame height (Sam is 32x48, Sarah 32x32).
     this.playerShadow = this.add.ellipse(0, 0, 14, 5, 0x000000, 0.35);
-    this.playerShadow.setDepth(9);
     this.player = this.add.sprite(
       0,
       0,
@@ -407,7 +489,8 @@ export class OverworldScene extends Phaser.Scene {
       this.sprite.idle.down,
     );
     this.player.setOrigin(0.5, 1);
-    this.player.setDepth(10);
+    // Depth is Y-sorted (see update/placePlayer) so the player interleaves with
+    // bushes; no fixed depth here.
   }
 
   // Sprite is anchored at its feet; nudge them just below the tile center so the
@@ -433,6 +516,8 @@ function isAbovePlayerLayer(layerData: Phaser.Tilemaps.LayerData): boolean {
   }
   return false;
 }
+
+const tileKey = (x: number, y: number) => `${x},${y}`;
 
 function dirToDelta(dir: Dir): [number, number] {
   switch (dir) {

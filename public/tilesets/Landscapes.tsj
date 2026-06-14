@@ -33,6 +33,15 @@
          "type":"base-grass"
         }, 
         {
+         "id":35,
+         "properties":[
+                {
+                 "name":"bush",
+                 "type":"bool",
+                 "value":true
+                }]
+        }, 
+        {
          "id":60,
          "type":"base-grass"
         }, 

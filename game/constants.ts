@@ -88,6 +88,17 @@ export function animKey(id: CharacterId, gait: "walk" | "run", dir: Dir) {
   return `${id}-${gait}-${dir}`;
 }
 
+// --- bushes ---
+// Standalone 2-frame sheet (public/tilesets/bushes.png, 32x16): frame 0 = at
+// rest, frame 1 = leaves displaced. Map tiles tagged `bush=true` in Tiled are
+// swapped at runtime for an animated sprite from this sheet, so each bush can
+// Y-sort against the player (sometimes in front, sometimes behind) and rustle
+// when walked through.
+export const BUSH_SHEET = "bushes";
+export const BUSH_TEXTURE_PATH = "/tilesets/bushes.png";
+export const BUSH_FRAME_SIZE = 16;
+export const BUSH_RUSTLE_ANIM = "bush-rustle";
+
 // --- dev ergonomics ---
 // In development, skip Title + CharacterSelect and drop straight into the
 // overworld so hot-reloads land in-game. Append ?intro to the URL to watch the

@@ -1,6 +1,10 @@
 import Phaser from "phaser";
 import {
   animKey,
+  BUSH_FRAME_SIZE,
+  BUSH_RUSTLE_ANIM,
+  BUSH_SHEET,
+  BUSH_TEXTURE_PATH,
   CHARACTER_SPRITES,
   CharacterSprite,
   DEV_DEFAULT_CHARACTER,
@@ -26,6 +30,10 @@ export class BootScene extends Phaser.Scene {
         frameHeight: sprite.frameHeight,
       });
     }
+    this.load.spritesheet(BUSH_SHEET, BUSH_TEXTURE_PATH, {
+      frameWidth: BUSH_FRAME_SIZE,
+      frameHeight: BUSH_FRAME_SIZE,
+    });
     loadMapAssets(this, OVERWORLD);
   }
 
@@ -33,6 +41,17 @@ export class BootScene extends Phaser.Scene {
     for (const [id, sprite] of Object.entries(CHARACTER_SPRITES)) {
       this.createCharacterAnims(id as keyof typeof CHARACTER_SPRITES, sprite);
     }
+
+    // Walk-through rustle: snap to the displaced frame and shake back to rest.
+    // Plays once (no repeat) — re-triggered each time the player enters a bush.
+    this.anims.create({
+      key: BUSH_RUSTLE_ANIM,
+      frames: this.anims.generateFrameNumbers(BUSH_SHEET, {
+        frames: [1, 0, 1, 0],
+      }),
+      frameRate: 16,
+      repeat: 0,
+    });
 
     if (this.shouldSkipIntro()) {
       this.registry.set("character", DEV_DEFAULT_CHARACTER);
