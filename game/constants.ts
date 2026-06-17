@@ -22,6 +22,10 @@ export type CharacterSprite = {
   sheetKey: string;
   /** Path under public/. */
   texturePath: string;
+  /** Phaser texture key for the character-select portrait (single image). */
+  selectKey: string;
+  /** Portrait path under public/, shown on the character-select screen. */
+  selectPath: string;
   frameWidth: number;
   frameHeight: number;
   /** Idle (standing) frame per direction. */
@@ -40,6 +44,8 @@ export const CHARACTER_SPRITES: Record<CharacterId, CharacterSprite> = {
   sam: {
     sheetKey: "sam-sheet",
     texturePath: "/playable-characters/sam-sprites.png",
+    selectKey: "sam-select",
+    selectPath: "/playable-characters/sam-character-select.png",
     frameWidth: 32,
     frameHeight: 32,
     idle: { down: 0, right: 3, up: 6, left: 9 },
@@ -64,6 +70,8 @@ export const CHARACTER_SPRITES: Record<CharacterId, CharacterSprite> = {
   sarah: {
     sheetKey: "sarah-sheet",
     texturePath: "/playable-characters/sarah-sprites.png",
+    selectKey: "sarah-select",
+    selectPath: "/playable-characters/sarah-character-select.png",
     frameWidth: 32,
     frameHeight: 32,
     idle: { down: 0, right: 3, up: 6, left: 9 },

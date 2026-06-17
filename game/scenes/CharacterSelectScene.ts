@@ -16,6 +16,7 @@ type Slot = {
   id: CharacterId;
   container: Phaser.GameObjects.Container;
   frame: Phaser.GameObjects.Rectangle;
+  label: Phaser.GameObjects.Text;
 };
 
 export class CharacterSelectScene extends Phaser.Scene {
@@ -171,14 +172,15 @@ export class CharacterSelectScene extends Phaser.Scene {
       .rectangle(0, 0, 48, 72, 0x1c1c24)
       .setStrokeStyle(1, 0x2e2e3a);
 
-    // Each character's own sheet, facing-down idle frame.
+    // Each character's dedicated character-select portrait.
     const cfg = CHARACTER_SPRITES[id];
     const sprite = this.add
-      .sprite(0, -2, cfg.sheetKey, cfg.idle.down)
+      .image(0, -2, cfg.selectKey)
       .setOrigin(0.5, 0.5);
 
+    // Name sits above the portrait and grows when the slot is hovered/selected.
     const label = this.add
-      .text(0, 28, char.name.toUpperCase(), {
+      .text(0, -46, char.name.toUpperCase(), {
         fontFamily: "monospace",
         fontSize: "9px",
         color: "#ffffff",
@@ -186,7 +188,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     container.add([frame, sprite, label]);
-    return { id, container, frame };
+    return { id, container, frame, label };
   }
 
   private move(delta: number) {
@@ -199,9 +201,15 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.slots.forEach((slot, idx) => {
       const selected = idx === i;
       slot.frame.setStrokeStyle(selected ? 2 : 1, selected ? 0xfde68a : 0x2e2e3a);
+      slot.label.setColor(selected ? "#fde68a" : "#ffffff");
       this.tweens.add({
         targets: slot.container,
         scale: selected ? 1.1 : 1,
+        duration: 120,
+      });
+      this.tweens.add({
+        targets: slot.label,
+        scale: selected ? 1.5 : 1,
         duration: 120,
       });
     });

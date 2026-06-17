@@ -30,6 +30,8 @@ export class BootScene extends Phaser.Scene {
         frameWidth: sprite.frameWidth,
         frameHeight: sprite.frameHeight,
       });
+      // Character-select portrait — a single image, not a spritesheet.
+      this.load.image(sprite.selectKey, sprite.selectPath);
     }
     this.load.spritesheet(BUSH_SHEET, BUSH_TEXTURE_PATH, {
       frameWidth: BUSH_FRAME_SIZE,
