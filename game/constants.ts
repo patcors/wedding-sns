@@ -99,6 +99,40 @@ export const BUSH_TEXTURE_PATH = "/tilesets/bushes.png";
 export const BUSH_FRAME_SIZE = 16;
 export const BUSH_RUSTLE_ANIM = "bush-rustle";
 
+// --- music ---
+// Chiptune renders (MIDI -> pulse voices, see scripts/chiptune/), one looped as
+// the overworld theme once the player spawns. The player picks which on the
+// character-select screen; the .m4a files are AAC encoded from the .wav renders
+// via afconvert (~3-5MB vs ~20-28MB raw) so they load on a phone over hotel Wi-Fi.
+export type TrackId = "marigolds" | "captain";
+
+export interface Track {
+  id: TrackId;
+  name: string;
+  key: string; // Phaser audio cache key
+  path: string; // served from /public
+}
+
+export const TRACKS: Record<TrackId, Track> = {
+  marigolds: {
+    id: "marigolds",
+    name: "Marigolds",
+    key: "track-marigolds",
+    path: "/music/chiptune/marigolds.m4a",
+  },
+  captain: {
+    id: "captain",
+    name: "Captain",
+    key: "track-captain",
+    path: "/music/chiptune/captain.m4a",
+  },
+};
+
+// Order shown in the selector; first entry is the default.
+export const TRACK_IDS: TrackId[] = ["marigolds", "captain"];
+export const DEFAULT_TRACK_ID: TrackId = "marigolds";
+export const MUSIC_VOLUME = 0.5;
+
 // --- dev ergonomics ---
 // In development, skip Title + CharacterSelect and drop straight into the
 // overworld so hot-reloads land in-game. Append ?intro to the URL to watch the

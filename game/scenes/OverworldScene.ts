@@ -4,10 +4,13 @@ import {
   BUSH_RUSTLE_ANIM,
   BUSH_SHEET,
   CHARACTER_SPRITES,
-  CHARACTERS,
   CharacterId,
   CharacterSprite,
   Dir,
+  DEFAULT_TRACK_ID,
+  MUSIC_VOLUME,
+  TRACKS,
+  TrackId,
 } from "../constants";
 import { OVERWORLD } from "../data/maps/overworld";
 import { buildTilemap } from "../systems/tilemap";
@@ -29,7 +32,6 @@ const WORLD_SCALE = 1;
 // always-on-top bands sit far above that, and ground layers far below it.
 const ABOVE_PLAYER_DEPTH = 100_000; // roofs / treetops — always over everything
 const LEAF_DEPTH = 90_000; // rustle particles — over props, under roofs
-const HUD_DEPTH = 1_000_000; // screen-fixed name tag — over all of the above
 
 export class OverworldScene extends Phaser.Scene {
   private tilemap!: Phaser.Tilemaps.Tilemap;
@@ -49,6 +51,8 @@ export class OverworldScene extends Phaser.Scene {
   private tileY = 0;
   private moving = false;
   private facing: Dir = "down";
+
+  private music?: Phaser.Sound.BaseSound;
 
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<Dir, Phaser.Input.Keyboard.Key>;
@@ -85,6 +89,7 @@ export class OverworldScene extends Phaser.Scene {
     this.tileY = spawn.y;
     this.buildPlayer();
     this.placePlayer();
+    this.startMusic();
 
     // Camera follows the player around the larger world. No arcade physics —
     // movement is pure tweens, collision is the tile `collides` check in canEnter.
@@ -116,17 +121,6 @@ export class OverworldScene extends Phaser.Scene {
     this.bindKeys();
     this.bindExternalInput();
     this.bindTap();
-
-    this.add
-      .text(4, 4, CHARACTERS[this.character].name, {
-        fontFamily: "monospace",
-        fontSize: "8px",
-        color: "#ffffff",
-        backgroundColor: "#00000088",
-        padding: { left: 3, right: 3, top: 1, bottom: 1 },
-      })
-      .setScrollFactor(0)
-      .setDepth(HUD_DEPTH);
 
     this.cameras.main.fadeIn(300, 0, 0, 0);
   }
@@ -476,6 +470,39 @@ export class OverworldScene extends Phaser.Scene {
     // update() keeps it in step thereafter.
     this.player.setDepth(this.player.y);
     this.playerShadow.setDepth(this.player.y - 1);
+  }
+
+  // Loop the chiptune theme once the player is in the world. The browser may
+  // have the audio context locked until a user gesture (e.g. dev skip-intro,
+  // no Title tap); Phaser unlocks on the first input, so defer play() until
+  // then rather than dropping the track. Stop on shutdown so re-entering the
+  // scene doesn't stack a second loop on top.
+  private startMusic() {
+    if (this.music) return;
+    const trackId =
+      (this.registry.get("track") as TrackId | undefined) ?? DEFAULT_TRACK_ID;
+    const track = TRACKS[trackId] ?? TRACKS[DEFAULT_TRACK_ID];
+    // If the audio failed to load (404, decode error), play on silently rather
+    // than crashing the scene — the game is still fully playable without music.
+    if (!this.cache.audio.exists(track.key)) {
+      console.warn(`music track "${track.key}" not in cache; skipping`);
+      return;
+    }
+    this.music = this.sound.add(track.key, {
+      loop: true,
+      volume: MUSIC_VOLUME,
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.music?.stop();
+      this.music?.destroy();
+      this.music = undefined;
+    });
+
+    if (this.sound.locked) {
+      this.sound.once(Phaser.Sound.Events.UNLOCKED, () => this.music?.play());
+    } else {
+      this.music.play();
+    }
   }
 
   private buildPlayer() {

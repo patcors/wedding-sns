@@ -10,6 +10,7 @@ import {
   DEV_DEFAULT_CHARACTER,
   DEV_SKIP_INTRO,
   Dir,
+  TRACKS,
 } from "../constants";
 import { OVERWORLD } from "../data/maps/overworld";
 import { loadMapAssets } from "../systems/tilemap";
@@ -35,6 +36,9 @@ export class BootScene extends Phaser.Scene {
       frameHeight: BUSH_FRAME_SIZE,
     });
     loadMapAssets(this, OVERWORLD);
+    for (const track of Object.values(TRACKS)) {
+      this.load.audio(track.key, track.path);
+    }
   }
 
   create() {
