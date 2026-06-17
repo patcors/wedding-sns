@@ -7,6 +7,7 @@ import { BootScene } from "./scenes/BootScene";
 import { TitleScene } from "./scenes/TitleScene";
 import { CharacterSelectScene } from "./scenes/CharacterSelectScene";
 import { OverworldScene } from "./scenes/OverworldScene";
+import { EndingScene } from "./scenes/EndingScene";
 
 export function createGame(Phaser: typeof PhaserNS, parent: HTMLElement) {
   return new Phaser.Game({
@@ -32,6 +33,12 @@ export function createGame(Phaser: typeof PhaserNS, parent: HTMLElement) {
     },
     fps: { target: 60, forceSetTimeOut: false },
     input: { activePointers: 3 },
-    scene: [BootScene, TitleScene, CharacterSelectScene, OverworldScene],
+    scene: [
+      BootScene,
+      TitleScene,
+      CharacterSelectScene,
+      OverworldScene,
+      EndingScene,
+    ],
   });
 }

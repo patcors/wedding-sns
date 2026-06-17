@@ -59,6 +59,16 @@ export class BootScene extends Phaser.Scene {
       repeat: 0,
     });
 
+    // ?ending-scene jumps straight into the scripted ending "movie" — handy for
+    // authoring it in isolation. Runs after anims are created above (the
+    // cutscene plays the walk cycle), and seeds a default character so the pair
+    // renders even without going through CharacterSelect.
+    if (this.hasQueryParam("ending-scene")) {
+      this.registry.set("character", DEV_DEFAULT_CHARACTER);
+      this.scene.start("Ending");
+      return;
+    }
+
     if (this.shouldSkipIntro()) {
       this.registry.set("character", DEV_DEFAULT_CHARACTER);
       this.scene.start("Overworld");
@@ -67,16 +77,18 @@ export class BootScene extends Phaser.Scene {
     this.scene.start("Title");
   }
 
+  private hasQueryParam(name: string) {
+    return (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has(name)
+    );
+  }
+
   // Dev shortcut: jump straight into the overworld. ?intro forces the real
   // Title -> CharacterSelect opening even in development.
   private shouldSkipIntro() {
     if (!DEV_SKIP_INTRO) return false;
-    if (
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).has("intro")
-    ) {
-      return false;
-    }
+    if (this.hasQueryParam("intro")) return false;
     return true;
   }
 
