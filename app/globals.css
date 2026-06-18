@@ -3,6 +3,27 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Viewport-height unit used to size the Game Boy console. In a normal mobile
+     browser we want `dvh` so the console tracks the *visible* height as the
+     address bar / bottom toolbar take up space — otherwise the console is built
+     to the larger `vh` height and its bottom slides under the chrome. */
+  --vh: 100dvh;
+}
+
+/* ...BUT in an installed PWA, `dvh` is bugged on iOS (it reports stale/wrong
+   values), and `vh` is the only unit that behaves. There's no browser chrome in
+   standalone mode anyway, so `vh` is exactly right there. Switch back to it.
+   iOS doesn't reliably match this media query for home-screen PWAs, so the
+   inline script in layout.tsx also tags <html data-standalone> as a fallback —
+   both selectors below keep them in sync. */
+@media all and (display-mode: standalone) {
+  :root {
+    --vh: 100vh;
+  }
+}
+html[data-standalone="true"] {
+  --vh: 100vh;
 }
 
 @theme inline {
@@ -34,19 +55,32 @@
   }
 }
 
-/* Dark app-shell color behind everything. In an installed PWA the home-screen
-   launch has no browser chrome, so the bottom safe-area / home-indicator strip
-   is exposed; painting <html> dark makes that strip blend with the game's
-   zinc-900 frame instead of flashing the old white body background. */
+/* App-shell color behind everything — the strip exposed behind the browser /
+   PWA chrome.
+   - Mobile browser (Safari): Game Boy yellow, so the console plastic reads as
+     continuous behind the notch and below the address bar / bottom toolbar
+     instead of flashing a dark strip.
+   - Installed PWA: dark zinc that matches the Game Boy frame, so the exposed
+     bottom safe-area / home-indicator strip blends in (there's no chrome to
+     fill with yellow there). */
 html {
-  /* zinc-900, matches the Game Boy frame */
-  background-color: #1b181a;
+  background-color: #f1b000; /* GB_YELLOW */
   overflow: hidden;
+}
+@media all and (display-mode: standalone) {
+  html {
+    /* zinc-900, matches the Game Boy frame */
+    background-color: #1b181a;
+  }
+}
+html[data-standalone="true"] {
+  background-color: #1b181a;
 }
 
 body {
-  /* Fill the full dynamic viewport so pages cover the safe areas... */
-  min-height: 100dvh;
+  /* Fill the viewport so pages cover the safe areas. Uses --vh (dvh in a
+     browser, vh in a standalone PWA — see :root above). */
+  min-height: var(--vh);
   /* ...and stay transparent so the dark <html> shell shows through any gap
      rather than the previous white. Pages paint their own backgrounds. */
   background: transparent;

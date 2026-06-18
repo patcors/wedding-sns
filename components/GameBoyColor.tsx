@@ -1,6 +1,6 @@
 "use client";
 
-import { CSSProperties, ReactNode, useRef } from "react";
+import { CSSProperties, ReactNode, useEffect, useRef } from "react";
 import { inputBus, type InputAction, type InputDir } from "@/game/input/bus";
 
 // Game Boy Color frame built as a horizontal 9-slice around the game screen.
@@ -55,7 +55,7 @@ const DEBUG_CONTROLS = false;
 
 // Screen window geometry, measured in viewport pixels. The bezel images are
 // fixed to the viewport edges (left 33, right 34, top 40), so the playable
-// screen sits at (33, 40) with size (100vw - 67) × (100vh - 400). The top
+// screen sits at (33, 40) with size (100vw - 67) × (100dvh - 400). The top
 // pieces (screen, top band, side edges) are additionally pushed down by
 // env(safe-area-inset-top) so the whole console clears the iOS notch.
 const SCREEN_LEFT = 33;
@@ -79,6 +79,35 @@ const GB_MAX_HEIGHT = 950;
 
 export default function GameBoyColor({ topScreen }: Props) {
   const rigRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLElement>(null);
+
+  // iOS fires its text-selection loupe / magnifier as the *default action* of a
+  // long touch. CSS (`-webkit-user-select`/`-webkit-touch-callout: none`) does
+  // not reliably suppress it once a pointer is captured — which is exactly what
+  // the hold-to-walk d-pad does — and React's onTouchStart is registered passive,
+  // so calling preventDefault from a React handler is a no-op. The only thing
+  // that actually cancels the gesture is preventDefault on a NON-passive native
+  // touchstart listener. Pointer events still fire after this, so the d-pad and
+  // action buttons keep working; nothing here scrolls, so cancelling the default
+  // costs us nothing. Inputs/textareas are exempted for the future message form.
+  useEffect(() => {
+    const el = shellRef.current;
+    if (!el) return;
+    const stop = (e: TouchEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+    };
+    el.addEventListener("touchstart", stop, { passive: false });
+    return () => el.removeEventListener("touchstart", stop);
+  }, []);
 
   return (
     // The shell fills the whole viewport (notch included) and is painted
@@ -86,6 +115,7 @@ export default function GameBoyColor({ topScreen }: Props) {
     // safe-area inset, so the only part of the yellow shell left showing is the
     // notch strip — on an iOS PWA the notch reads as yellow console plastic.
     <main
+      ref={shellRef}
       className="gb-shell relative flex-1 h-full w-full overflow-hidden select-none"
       // Inline (not in CSS): Lightning CSS strips these from stylesheets, but
       // `-webkit-touch-callout: none` is what suppresses iOS's long-press
@@ -99,8 +129,12 @@ export default function GameBoyColor({ topScreen }: Props) {
           "--gb-width": `min(100vw, ${GB_MAX_WIDTH}px)`,
           "--gb-gutter": `max(0px, (100vw - ${GB_MAX_WIDTH}px) / 2)`,
           // Equal top/bottom margin that centres the console once it hits its
-          // height cap; 0 while the viewport is shorter than the cap.
-          "--gb-top-gutter": `max(0px, (100vh - env(safe-area-inset-top, 0px) - ${GB_MAX_HEIGHT}px) / 2)`,
+          // height cap; 0 while the viewport is shorter than the cap. The height
+          // unit comes from `--vh` (see globals.css): `dvh` in a mobile browser
+          // so the console tracks the visible height under the address bar /
+          // toolbar, but plain `vh` in an installed PWA, where `dvh` is bugged on
+          // iOS and there's no chrome to account for anyway.
+          "--gb-top-gutter": `max(0px, (var(--vh) - env(safe-area-inset-top, 0px) - ${GB_MAX_HEIGHT}px) / 2)`,
         } as CSSProperties
       }
     >
@@ -111,7 +145,7 @@ export default function GameBoyColor({ topScreen }: Props) {
           left: `calc(${SCREEN_LEFT}px + var(--gb-gutter))`,
           top: `calc(${SCREEN_TOP}px + env(safe-area-inset-top, 0px) + var(--gb-top-gutter))`,
           width: `calc(var(--gb-width) - ${SCREEN_INSET_X}px)`,
-          height: `calc(min(100vh - env(safe-area-inset-top, 0px), ${GB_MAX_HEIGHT}px) - ${SCREEN_INSET_Y}px)`,
+          height: `calc(min(var(--vh) - env(safe-area-inset-top, 0px), ${GB_MAX_HEIGHT}px) - ${SCREEN_INSET_Y}px)`,
         }}
       >
         {topScreen}
