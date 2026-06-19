@@ -67,6 +67,14 @@ export class StartMenuScene extends Phaser.Scene {
     const cx = GAME_WIDTH / 2;
     const cy = GAME_HEIGHT / 2;
 
+    // Phaser reuses this scene instance across stop/start, so any state held on
+    // `this` survives a close. The Text objects from the previous open were
+    // destroyed on shutdown — clear the stale references or highlight() will
+    // iterate over dead objects (this.data is null) and crash / freeze mobile.
+    this.items = [];
+    this.rows = [];
+    this.cursor = 0;
+
     this.reflow();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.reflow);
 
@@ -211,9 +219,9 @@ export class StartMenuScene extends Phaser.Scene {
     this.renderValues();
   }
 
-  // Fade the whole screen to black (the backdrop sits above the world) and
-  // return to the title. Stopping the Overworld fires its SHUTDOWN, which tears
-  // down its music.
+  // Fade the whole screen to black (the backdrop sits above the world) and do a
+  // full browser navigation back to the site root, tearing down the game
+  // entirely (and its music) rather than returning to the in-game title.
   private exitGame() {
     // Lift the dim layer above the panel so the fade blacks out everything.
     this.children.bringToTop(this.backdrop);
@@ -222,8 +230,7 @@ export class StartMenuScene extends Phaser.Scene {
       fillAlpha: 1,
       duration: 300,
       onComplete: () => {
-        this.scene.stop("Overworld");
-        this.scene.start("Title");
+        window.location.href = "/";
       },
     });
   }
