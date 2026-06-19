@@ -12,7 +12,7 @@ import {
   Dir,
   TRACKS,
 } from "../constants";
-import { OVERWORLD } from "../data/maps/overworld";
+import { HOME, OVERWORLD } from "../data/maps/overworld";
 import { loadMapAssets } from "../systems/tilemap";
 
 const DIRS: Dir[] = ["down", "left", "right", "up"];
@@ -37,7 +37,7 @@ export class BootScene extends Phaser.Scene {
       frameWidth: BUSH_FRAME_SIZE,
       frameHeight: BUSH_FRAME_SIZE,
     });
-    loadMapAssets(this, OVERWORLD);
+    loadMapAssets(this, [HOME, OVERWORLD]);
     for (const track of Object.values(TRACKS)) {
       this.load.audio(track.key, track.path);
     }
@@ -71,7 +71,7 @@ export class BootScene extends Phaser.Scene {
 
     if (this.shouldSkipIntro()) {
       this.registry.set("character", DEV_DEFAULT_CHARACTER);
-      this.scene.start("Overworld");
+      this.scene.start("Overworld", { map: HOME });
       return;
     }
     this.scene.start("Title");

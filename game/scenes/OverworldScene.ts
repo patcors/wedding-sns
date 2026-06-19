@@ -13,7 +13,7 @@ import {
   TRACKS,
   TrackId,
 } from "../constants";
-import { OVERWORLD } from "../data/maps/overworld";
+import { MAPS, OVERWORLD, type MapManifest } from "../data/maps/overworld";
 import { buildTilemap } from "../systems/tilemap";
 import { inputBus } from "../input/bus";
 import { viewportZoom } from "../systems/viewport";
@@ -34,11 +34,25 @@ const WORLD_SCALE = 1;
 const ABOVE_PLAYER_DEPTH = 100_000; // roofs / treetops — always over everything
 const LEAF_DEPTH = 90_000; // rustle particles — over props, under roofs
 
+// A warp tile: stepping onto it transitions to `target` (a map key), landing on
+// the named `spawn` object there (or that map's default spawn if omitted).
+type Warp = { target: string; spawn?: string };
+
 export class OverworldScene extends Phaser.Scene {
   private tilemap!: Phaser.Tilemaps.Tilemap;
   private layers: Phaser.Tilemaps.TilemapLayer[] = [];
   private tileW = 16;
   private tileH = 16;
+
+  // Which map this run is showing, and (when arriving via a warp) the spawn
+  // object to land on. Both come from init(data); default to the overworld so
+  // a bare scene.start("Overworld") still works.
+  private map: MapManifest = OVERWORLD;
+  private targetSpawn?: string;
+  // Warp tiles keyed by "x,y" — looked up on each completed step.
+  private warps = new Map<string, Warp>();
+  // Set once a warp fires so input freezes and the fade isn't retriggered.
+  private pendingWarp: Warp | null = null;
 
   private player!: Phaser.GameObjects.Sprite;
   private playerShadow!: Phaser.GameObjects.Ellipse;
@@ -69,6 +83,19 @@ export class OverworldScene extends Phaser.Scene {
 
   constructor() {
     super("Overworld");
+  }
+
+  // Warps restart this same scene with new data, so reset everything that
+  // would otherwise leak from the previous map (stale bush/warp lookups, a
+  // half-finished step, held d-pad directions).
+  init(data?: { map?: MapManifest; spawn?: string }) {
+    this.map = data?.map ?? OVERWORLD;
+    this.targetSpawn = data?.spawn;
+    this.bushes = new Map();
+    this.warps = new Map();
+    this.pendingWarp = null;
+    this.moving = false;
+    this.pressed = { up: false, down: false, left: false, right: false };
   }
 
   // Bound field so on()/off() share one reference. Sets the camera zoom so a
@@ -117,6 +144,15 @@ export class OverworldScene extends Phaser.Scene {
     this.scale.on(Phaser.Scale.Events.RESIZE, this.applyViewportZoom);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.applyViewportZoom);
+      // A warp is a scene.restart, not a real exit — leave the looping track
+      // playing so the music is continuous across maps. Only stop it on a
+      // genuine teardown (e.g. quitting to the title screen). this.music and
+      // the global sound both survive a restart, so create() won't re-add it.
+      if (!this.pendingWarp) {
+        this.music?.stop();
+        this.music?.destroy();
+        this.music = undefined;
+      }
     });
 
     this.bindKeys();
@@ -173,7 +209,7 @@ export class OverworldScene extends Phaser.Scene {
   // --- world ---
 
   private buildWorld() {
-    this.tilemap = buildTilemap(this, OVERWORLD);
+    this.tilemap = buildTilemap(this, this.map);
     // tileW/tileH are the *rendered* tile size — the player is positioned on the
     // scaled grid. The player sprite itself stays native (see buildPlayer), so
     // the world zooms while the character keeps its size.
@@ -217,6 +253,50 @@ export class OverworldScene extends Phaser.Scene {
     // Convert `bush=true` tiles (wherever they're painted) into Y-sorted sprites
     // so the player can pass behind or in front of them and they can rustle.
     this.extractBushes(allLayers);
+
+    // Index warp objects so a completed step can check the tile it landed on.
+    this.extractWarps();
+  }
+
+  // Read object-layer objects carrying a `warp` (target map key) custom property
+  // and mark every tile they cover as a warp tile. Points cover one tile; a
+  // rectangle covers its whole span (e.g. a doorway or a map edge). An optional
+  // `spawn` (string) names the object to land on in the target map.
+  private extractWarps() {
+    const tw = this.tilemap.tileWidth;
+    const th = this.tilemap.tileHeight;
+    for (const objectLayer of this.tilemap.objects) {
+      for (const o of objectLayer.objects) {
+        const target = objString(o, "warp");
+        if (!target || o.x == null || o.y == null) continue;
+        const spawn = objString(o, "spawn");
+        // Tiles overlapped by the object's pixel span, clamped to the map.
+        // Edge warps are often placed flush with the border in Tiled and end
+        // up a hair outside it (e.g. y = -1.7), so floor()-ing the raw start
+        // would register an off-map row the player can never step on. Clamping
+        // keeps the on-map row (row 0) covered. width/height are 0 for points,
+        // which collapses to the single containing tile. The -1 keeps a span
+        // whose far edge lands exactly on a tile boundary from bleeding into
+        // the next tile.
+        const ow = o.width ?? 0;
+        const oh = o.height ?? 0;
+        const x0 = Math.max(0, Math.floor(o.x / tw));
+        const y0 = Math.max(0, Math.floor(o.y / th));
+        const x1 = Math.min(
+          this.tilemap.width - 1,
+          Math.floor((o.x + Math.max(0, ow - 1)) / tw),
+        );
+        const y1 = Math.min(
+          this.tilemap.height - 1,
+          Math.floor((o.y + Math.max(0, oh - 1)) / th),
+        );
+        for (let x = x0; x <= x1; x++) {
+          for (let y = y0; y <= y1; y++) {
+            this.warps.set(tileKey(x, y), { target, spawn });
+          }
+        }
+      }
+    }
   }
 
   // Replace every tile carrying the Tiled custom property `bush=true` with an
@@ -270,19 +350,34 @@ export class OverworldScene extends Phaser.Scene {
     this.leafEmitter.emitParticleAt(bush.x, bush.y - this.tileH * 0.6, 5);
   }
 
-  // Spawn from an object-layer Point named "spawn"; fall back to map center so
-  // the scene never breaks while the map is still being authored.
+  // Decide where the player appears. Priority:
+  //   1. The spawn named by an incoming warp (so each warp picks its landing).
+  //   2. A per-character spawn: an object with the bool property
+  //      `<character>_spawn = true` (home has `sam_spawn` / `sarah_spawn`).
+  //   3. A generic Point named "spawn" (the overworld's single spawn).
+  //   4. Map center — so the scene never breaks while a map is being authored.
+  // Object coords are the map's native (unscaled) pixels.
   private findSpawn(): { x: number; y: number } {
-    for (const objectLayer of this.tilemap.objects) {
-      const spawn = objectLayer.objects.find((o) => o.name === "spawn");
-      if (spawn && spawn.x != null && spawn.y != null) {
-        // Object coords are in the map's native (unscaled) pixels.
-        return {
-          x: Math.floor(spawn.x / this.tilemap.tileWidth),
-          y: Math.floor(spawn.y / this.tilemap.tileHeight),
-        };
-      }
+    const objects = this.tilemap.objects.flatMap((l) => l.objects);
+    const toTile = (o: Phaser.Types.Tilemaps.TiledObject) => ({
+      x: Math.floor((o.x ?? 0) / this.tilemap.tileWidth),
+      y: Math.floor((o.y ?? 0) / this.tilemap.tileHeight),
+    });
+
+    const candidates = [
+      this.targetSpawn
+        ? objects.find(
+            (o) =>
+              o.name === this.targetSpawn || objBool(o, this.targetSpawn!),
+          )
+        : undefined,
+      objects.find((o) => objBool(o, `${this.character}_spawn`)),
+      objects.find((o) => o.name === "spawn"),
+    ];
+    for (const o of candidates) {
+      if (o && o.x != null && o.y != null) return toTile(o);
     }
+
     return {
       x: Math.floor(this.tilemap.width / 2),
       y: Math.floor(this.tilemap.height / 2),
@@ -448,7 +543,28 @@ export class OverworldScene extends Phaser.Scene {
         // based on whether a direction is still held. That keeps the cycle
         // smooth across consecutive same-direction steps.
         this.moving = false;
+        // Landed on a warp tile? Fade out and switch maps.
+        const warp = this.warps.get(tileKey(this.tileX, this.tileY));
+        if (warp) this.doWarp(warp);
       },
+    });
+  }
+
+  // Fade out, then restart this scene on the target map at the warp's spawn.
+  // restart() shuts the scene down first (stopping music via the SHUTDOWN
+  // handler) and re-runs init()/create() with the new data.
+  private doWarp(warp: Warp) {
+    if (this.pendingWarp) return;
+    const target = MAPS[warp.target];
+    if (!target) {
+      console.warn(`warp to unknown map "${warp.target}"`);
+      return;
+    }
+    this.pendingWarp = warp;
+    this.moving = true; // freeze input during the fade
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once("camerafadeoutcomplete", () => {
+      this.scene.restart({ map: target, spawn: warp.spawn });
     });
   }
 
@@ -517,17 +633,14 @@ export class OverworldScene extends Phaser.Scene {
   // Loop the chiptune theme once the player is in the world. The browser may
   // have the audio context locked until a user gesture (e.g. dev skip-intro,
   // no Title tap); Phaser unlocks on the first input, so defer play() until
-  // then rather than dropping the track. Stop on shutdown so re-entering the
-  // scene doesn't stack a second loop on top.
+  // then rather than dropping the track. The SHUTDOWN handler in create() stops
+  // it on a real exit but leaves it running across a warp.
   private startMusic() {
+    // Already looping — e.g. carried across a warp (scene.restart keeps the
+    // instance and the global sound). Don't stack a second track on top.
     if (this.music) return;
     const trackId =
       (this.registry.get("track") as TrackId | undefined) ?? DEFAULT_TRACK_ID;
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.music?.stop();
-      this.music?.destroy();
-      this.music = undefined;
-    });
     this.playTrack(TRACKS[trackId] ?? TRACKS[DEFAULT_TRACK_ID]);
   }
 
@@ -586,6 +699,36 @@ function isAbovePlayerLayer(layerData: Phaser.Tilemaps.LayerData): boolean {
     return (props as Record<string, unknown>)["above-player"] === true;
   }
   return false;
+}
+
+// Read a Tiled custom property off a map object. Phaser exposes object
+// properties as either an array of {name, value} or a plain object depending on
+// the path, so handle both (same as isAbovePlayerLayer does for layers).
+function objProp(
+  o: Phaser.Types.Tilemaps.TiledObject,
+  name: string,
+): unknown {
+  const props = (o as { properties?: unknown }).properties;
+  if (Array.isArray(props)) {
+    return props.find(
+      (p: { name?: string }) => p?.name === name,
+    )?.value;
+  }
+  if (props && typeof props === "object") {
+    return (props as Record<string, unknown>)[name];
+  }
+  return undefined;
+}
+
+const objBool = (o: Phaser.Types.Tilemaps.TiledObject, name: string) =>
+  objProp(o, name) === true;
+
+function objString(
+  o: Phaser.Types.Tilemaps.TiledObject,
+  name: string,
+): string | undefined {
+  const v = objProp(o, name);
+  return typeof v === "string" ? v : undefined;
 }
 
 const tileKey = (x: number, y: number) => `${x},${y}`;

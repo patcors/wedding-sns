@@ -24,19 +24,36 @@ export type MapManifest = {
   tilesets: TilesetRef[];
 };
 
+// Home and overworld are painted from the same two tilesets, so share one list
+// — the loader dedupes by tileset name, queueing each image/json only once.
+const SHARED_TILESETS: TilesetRef[] = [
+  {
+    name: "Landscapes",
+    tsj: "/tilesets/Landscapes.tsj",
+    image: "/tilesets/tileset-outdoor.png",
+  },
+  {
+    name: "Buildings",
+    tsj: "/tilesets/Buildings.tsj",
+    image: "/tilesets/Buildings.png",
+  },
+];
+
 export const OVERWORLD: MapManifest = {
   key: "overworld",
   url: "/maps/overworld.tmj",
-  tilesets: [
-    {
-      name: "Landscapes",
-      tsj: "/tilesets/Landscapes.tsj",
-      image: "/tilesets/tileset-outdoor.png",
-    },
-    {
-      name: "Buildings",
-      tsj: "/tilesets/Buildings.tsj",
-      image: "/tilesets/Buildings.png",
-    },
-  ],
+  tilesets: SHARED_TILESETS,
+};
+
+// The starting map. A warp object at its edge sends the player to OVERWORLD.
+export const HOME: MapManifest = {
+  key: "home",
+  url: "/maps/home.tmj",
+  tilesets: SHARED_TILESETS,
+};
+
+// Resolve a warp object's `warp` property (a map key string) to its manifest.
+export const MAPS: Record<string, MapManifest> = {
+  [OVERWORLD.key]: OVERWORLD,
+  [HOME.key]: HOME,
 };

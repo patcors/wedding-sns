@@ -9,12 +9,25 @@ const imageKey = (name: string) => `tiles:${name}`;
 
 const basename = (path: string) => path.split("/").pop() ?? path;
 
-/** Queue every asset a map needs. Call from a scene's preload(). */
-export function loadMapAssets(scene: Phaser.Scene, m: MapManifest) {
-  scene.load.json(mapJsonKey(m), m.url);
-  for (const ts of m.tilesets) {
-    scene.load.json(tsjKey(ts.name), ts.tsj);
-    scene.load.image(imageKey(ts.name), ts.image);
+/**
+ * Queue every asset one or more maps need. Call from a scene's preload().
+ * Tilesets shared between maps (keyed by name) are queued only once, so passing
+ * the whole map list is safe and won't double-load the same image/json.
+ */
+export function loadMapAssets(
+  scene: Phaser.Scene,
+  maps: MapManifest | MapManifest[],
+) {
+  const list = Array.isArray(maps) ? maps : [maps];
+  const seenTilesets = new Set<string>();
+  for (const m of list) {
+    scene.load.json(mapJsonKey(m), m.url);
+    for (const ts of m.tilesets) {
+      if (seenTilesets.has(ts.name)) continue;
+      seenTilesets.add(ts.name);
+      scene.load.json(tsjKey(ts.name), ts.tsj);
+      scene.load.image(imageKey(ts.name), ts.image);
+    }
   }
 }
 

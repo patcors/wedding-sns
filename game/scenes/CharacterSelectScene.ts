@@ -9,6 +9,7 @@ import {
   TRACK_IDS,
   TRACKS,
 } from "../constants";
+import { HOME } from "../data/maps/overworld";
 import { inputBus } from "../input/bus";
 import { DESIGN_CENTER, viewportZoom } from "../systems/viewport";
 
@@ -222,7 +223,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.cameras.main.flash(200, 255, 255, 255);
     this.cameras.main.fade(400, 0, 0, 0);
     this.cameras.main.once("camerafadeoutcomplete", () => {
-      this.scene.start("Overworld");
+      this.scene.start("Overworld", { map: HOME });
     });
   }
 }
