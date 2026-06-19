@@ -155,3 +155,7 @@ export const CHARACTERS: Record<
   sam: { id: "sam", name: "Sam", accent: 0x4f9dde },
   sarah: { id: "sarah", name: "Sarah", accent: 0xe26a8b },
 };
+
+// Order shown in any character picker; mirrors TRACK_IDS. Adding a playable
+// character is a data-only edit: a CHARACTER_SPRITES entry + an id here.
+export const CHARACTER_IDS: CharacterId[] = ["sam", "sarah"];

@@ -7,6 +7,7 @@ import { BootScene } from "./scenes/BootScene";
 import { TitleScene } from "./scenes/TitleScene";
 import { CharacterSelectScene } from "./scenes/CharacterSelectScene";
 import { OverworldScene } from "./scenes/OverworldScene";
+import { StartMenuScene } from "./scenes/StartMenuScene";
 import { EndingScene } from "./scenes/EndingScene";
 
 export function createGame(Phaser: typeof PhaserNS, parent: HTMLElement) {
@@ -38,6 +39,7 @@ export function createGame(Phaser: typeof PhaserNS, parent: HTMLElement) {
       TitleScene,
       CharacterSelectScene,
       OverworldScene,
+      StartMenuScene,
       EndingScene,
     ],
   });

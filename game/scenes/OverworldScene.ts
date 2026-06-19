@@ -9,6 +9,7 @@ import {
   Dir,
   DEFAULT_TRACK_ID,
   MUSIC_VOLUME,
+  Track,
   TRACKS,
   TrackId,
 } from "../constants";
@@ -301,6 +302,9 @@ export class OverworldScene extends Phaser.Scene {
       left: kb.addKey(K.A),
       right: kb.addKey(K.D),
     };
+    // ESC / Enter open the start menu (desktop parity with the START button).
+    kb.on("keydown-ESC", this.openMenu);
+    kb.on("keydown-ENTER", this.openMenu);
   }
 
   private bindExternalInput() {
@@ -318,12 +322,50 @@ export class OverworldScene extends Phaser.Scene {
     const offActionRelease = inputBus.onActionRelease((action) => {
       if (action === "b") this.running = false;
     });
+    // START (on-screen button) opens the pause/start menu.
+    const offStart = inputBus.onAction((action) => {
+      if (action === "start") this.openMenu();
+    });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       offPress();
       offRelease();
       offActionPress();
       offActionRelease();
+      offStart();
     });
+  }
+
+  // Launch the start menu as an overlay and freeze the world beneath it. The
+  // menu is its own Phaser scene (StartMenuScene) — game UI lives on the canvas,
+  // not in React DOM. Guarded so a second START press (which the still-live bus
+  // subscription above also receives while paused) doesn't stack a second menu;
+  // the menu itself handles closing.
+  private openMenu = () => {
+    if (this.scene.isActive("StartMenu")) return;
+    this.scene.launch("StartMenu");
+    this.scene.pause();
+  };
+
+  // Swap the playable character live (from the start menu). Walk/run anims for
+  // every character are registered up-front in BootScene, so we only need to
+  // point the sprite at the new sheet's idle frame for the current facing —
+  // update() picks the right namespaced anim on the next step.
+  setCharacter(id: CharacterId) {
+    if (id === this.character) return;
+    this.character = id;
+    this.sprite = CHARACTER_SPRITES[id];
+    this.registry.set("character", id);
+    this.player.anims.stop();
+    this.player.setTexture(this.sprite.sheetKey, this.sprite.idle[this.facing]);
+  }
+
+  // Switch the looped overworld theme live (from the start menu).
+  changeTrack(id: TrackId) {
+    this.registry.set("track", id);
+    this.music?.stop();
+    this.music?.destroy();
+    this.music = undefined;
+    this.playTrack(TRACKS[id] ?? TRACKS[DEFAULT_TRACK_ID]);
   }
 
   private bindTap() {
@@ -481,23 +523,25 @@ export class OverworldScene extends Phaser.Scene {
     if (this.music) return;
     const trackId =
       (this.registry.get("track") as TrackId | undefined) ?? DEFAULT_TRACK_ID;
-    const track = TRACKS[trackId] ?? TRACKS[DEFAULT_TRACK_ID];
-    // If the audio failed to load (404, decode error), play on silently rather
-    // than crashing the scene — the game is still fully playable without music.
-    if (!this.cache.audio.exists(track.key)) {
-      console.warn(`music track "${track.key}" not in cache; skipping`);
-      return;
-    }
-    this.music = this.sound.add(track.key, {
-      loop: true,
-      volume: MUSIC_VOLUME,
-    });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.music?.stop();
       this.music?.destroy();
       this.music = undefined;
     });
+    this.playTrack(TRACKS[trackId] ?? TRACKS[DEFAULT_TRACK_ID]);
+  }
 
+  // Add + play a looped track. Shared by startMusic (spawn) and changeTrack
+  // (live swap from the menu). If the audio failed to load (404, decode error),
+  // play on silently rather than crashing — the game is fully playable without
+  // music. The browser may keep the audio context locked until a user gesture,
+  // so defer play() to UNLOCKED rather than dropping the track.
+  private playTrack(track: Track) {
+    if (!this.cache.audio.exists(track.key)) {
+      console.warn(`music track "${track.key}" not in cache; skipping`);
+      return;
+    }
+    this.music = this.sound.add(track.key, { loop: true, volume: MUSIC_VOLUME });
     if (this.sound.locked) {
       this.sound.once(Phaser.Sound.Events.UNLOCKED, () => this.music?.play());
     } else {
