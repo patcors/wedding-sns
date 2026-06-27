@@ -8,6 +8,9 @@ import {
   CharacterSprite,
   Dir,
   DEFAULT_TRACK_ID,
+  GENERIC_MAN_IDLE_FRAME,
+  GENERIC_MAN_SHEET,
+  GENERIC_MAN_TURN_ANIM,
   MUSIC_VOLUME,
   Track,
   TRACKS,
@@ -59,6 +62,9 @@ export class OverworldScene extends Phaser.Scene {
   // Bush sprites converted from `bush=true` tiles, keyed by "x,y" tile coords so
   // a step can look up the bush it just walked into and rustle it.
   private bushes = new Map<string, Phaser.GameObjects.Sprite>();
+  // NPC sprites keyed by "x,y" tile coords — player stepping adjacent triggers
+  // the turn-to-front animation.
+  private npcs = new Map<string, Phaser.GameObjects.Sprite>();
   private leafEmitter!: Phaser.GameObjects.Particles.ParticleEmitter;
   private character: CharacterId = "sam";
   private sprite!: CharacterSprite;
@@ -93,6 +99,7 @@ export class OverworldScene extends Phaser.Scene {
     this.targetSpawn = data?.spawn;
     this.bushes = new Map();
     this.warps = new Map();
+    this.npcs = new Map();
     this.pendingWarp = null;
     this.moving = false;
     this.pressed = { up: false, down: false, left: false, right: false };
@@ -106,6 +113,7 @@ export class OverworldScene extends Phaser.Scene {
 
   create() {
     this.buildWorld();
+    this.spawnNpcs();
     this.buildLeafEmitter();
 
     this.character =
@@ -168,6 +176,11 @@ export class OverworldScene extends Phaser.Scene {
     // feet, so player.y IS the sort key; the shadow rides just beneath it.
     this.player.setDepth(this.player.y);
     this.playerShadow.setDepth(this.player.y - 1);
+    // Y-sort NPCs the same way — they're static so their depth never changes
+    // but keeping it here is consistent with any future moving NPCs.
+    for (const npc of this.npcs.values()) {
+      npc.setDepth(npc.y);
+    }
 
     if (this.moving) return;
 
@@ -207,6 +220,28 @@ export class OverworldScene extends Phaser.Scene {
   }
 
   // --- world ---
+
+  // Place static NPCs for the current map. NPC spawn points are authored in
+  // Tiled as point objects with property `npc-spawn = "<npc-id>"`.
+  private spawnNpcs() {
+    if (this.map.key !== "home") return;
+    this.spawnNpc(GENERIC_MAN_SHEET, GENERIC_MAN_IDLE_FRAME, 16, 5);
+  }
+
+  private spawnNpc(
+    sheet: string,
+    idleFrame: number,
+    tileX: number,
+    tileY: number,
+  ) {
+    const cx = tileX * this.tileW + this.tileW / 2;
+    const baseY = (tileY + 1) * this.tileH;
+    const npc = this.add
+      .sprite(cx, baseY, sheet, idleFrame)
+      .setOrigin(0.5, 1)
+      .setDepth(baseY);
+    this.npcs.set(tileKey(tileX, tileY), npc);
+  }
 
   private buildWorld() {
     this.tilemap = buildTilemap(this, this.map);
@@ -575,6 +610,11 @@ export class OverworldScene extends Phaser.Scene {
     this.player.anims.stop();
     this.player.setFrame(this.sprite.idle[dir]);
     const [dx, dy] = dirToDelta(dir);
+    const nx = this.tileX + dx;
+    const ny = this.tileY + dy;
+    // If bumping into an NPC, play its turn animation.
+    const npc = this.npcs.get(tileKey(nx, ny));
+    if (npc) npc.play(GENERIC_MAN_TURN_ANIM, true);
     const baseX = this.tileX * this.tileW + this.tileW / 2;
     const baseY = this.tileY * this.tileH + this.tileH / 2;
     const feetY = baseY + this.playerYOffset();
@@ -614,6 +654,8 @@ export class OverworldScene extends Phaser.Scene {
       const tile = layer.getTileAt(x, y);
       if (tile && tile.collides) return false;
     }
+    // NPC tiles are solid.
+    if (this.npcs.has(tileKey(x, y))) return false;
     return true;
   }
 

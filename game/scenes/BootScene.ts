@@ -10,6 +10,10 @@ import {
   DEV_DEFAULT_CHARACTER,
   DEV_SKIP_INTRO,
   Dir,
+  GENERIC_MAN_FRAME_SIZE,
+  GENERIC_MAN_SHEET,
+  GENERIC_MAN_TEXTURE_PATH,
+  GENERIC_MAN_TURN_ANIM,
   TRACKS,
 } from "../constants";
 import { HOME, OVERWORLD } from "../data/maps/overworld";
@@ -37,6 +41,10 @@ export class BootScene extends Phaser.Scene {
       frameWidth: BUSH_FRAME_SIZE,
       frameHeight: BUSH_FRAME_SIZE,
     });
+    this.load.spritesheet(GENERIC_MAN_SHEET, GENERIC_MAN_TEXTURE_PATH, {
+      frameWidth: GENERIC_MAN_FRAME_SIZE,
+      frameHeight: GENERIC_MAN_FRAME_SIZE,
+    });
     loadMapAssets(this, [HOME, OVERWORLD]);
     for (const track of Object.values(TRACKS)) {
       this.load.audio(track.key, track.path);
@@ -56,6 +64,16 @@ export class BootScene extends Phaser.Scene {
         frames: [1, 0, 1, 0],
       }),
       frameRate: 16,
+      repeat: 0,
+    });
+
+    // NPC idle turn: plays once when the player steps adjacent.
+    this.anims.create({
+      key: GENERIC_MAN_TURN_ANIM,
+      frames: this.anims.generateFrameNumbers(GENERIC_MAN_SHEET, {
+        frames: [0, 1, 2, 0],
+      }),
+      frameRate: 8,
       repeat: 0,
     });
 
