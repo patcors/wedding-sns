@@ -133,6 +133,36 @@
         }, 
         {
          "draworder":"topdown",
+         "id":6,
+         "name":"npc",
+         "objects":[
+                {
+                 "height":0,
+                 "id":12,
+                 "name":"generic-man",
+                 "opacity":1,
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"npc-spawn",
+                         "type":"string",
+                         "value":"generic-man"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":263.666666666667,
+                 "y":88.6666666666667
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":4,
          "name":"Object Layer 1",
          "objects":[
@@ -216,8 +246,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":6,
- "nextobjectid":8,
+ "nextlayerid":7,
+ "nextobjectid":13,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

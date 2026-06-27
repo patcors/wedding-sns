@@ -96,6 +96,14 @@ export function animKey(id: CharacterId, gait: "walk" | "run", dir: Dir) {
   return `${id}-${gait}-${dir}`;
 }
 
+// --- NPCs ---
+export const GENERIC_MAN_SHEET = "generic-man";
+export const GENERIC_MAN_TEXTURE_PATH = "/non-playable-characters/generic-man.png";
+export const GENERIC_MAN_FRAME_SIZE = 32;
+export const GENERIC_MAN_IDLE_FRAME = 0;
+// "turn-to-front" plays when the player walks adjacent (frames 0→1→2→0).
+export const GENERIC_MAN_TURN_ANIM = "generic-man-turn";
+
 // --- bushes ---
 // Standalone 2-frame sheet (public/tilesets/bushes.png, 32x16): frame 0 = at
 // rest, frame 1 = leaves displaced. Map tiles tagged `bush=true` in Tiled are
